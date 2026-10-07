@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>AERIS</title>
+<title>AERIS - AI Voice Assistant</title>
 
 <style>
 *{
@@ -48,12 +48,15 @@ h1{
   margin:auto;
   border-radius:50%;
   border:2px solid #00eaff;
-  box-shadow:0 0 20px #00eaff,
-             0 0 60px rgba(0,234,255,.35),
-             inset 0 0 40px rgba(0,234,255,.2);
+  box-shadow:
+    0 0 20px #00eaff,
+    0 0 60px rgba(0,234,255,.35),
+    inset 0 0 40px rgba(0,234,255,.2);
+
   display:flex;
   justify-content:center;
   align-items:center;
+  transition: all 0.3s ease;
 }
 
 .inner{
@@ -67,6 +70,7 @@ h1{
   align-items:center;
   font-size:25px;
   letter-spacing:4px;
+  box-shadow:0 0 30px rgba(0,234,255,.4);
 }
 
 .message{
@@ -85,6 +89,8 @@ button{
   color:#001015;
   font-size:17px;
   font-weight:bold;
+  cursor:pointer;
+  transition: 0.2s;
 }
 
 button:active{
@@ -95,6 +101,19 @@ button:active{
   background:#ff3158;
   color:white;
 }
+
+/* AERIS যখন কথা বলবে তখনকার অ্যানিমেশন */
+.speaking {
+  animation: pulse 1.2s infinite ease-in-out;
+  border-color: #00ffaa;
+  box-shadow: 0 0 30px #00ffaa, 0 0 80px rgba(0,255,170,.4);
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
 </style>
 </head>
 
@@ -102,364 +121,152 @@ button:active{
 
 <div class="container">
 
-<h1>AERIS</h1>
+  <h1>AERIS</h1>
 
-<div class="status" id="status">
-AERIS ONLINE
-</div>
-
-<div class="circle">
-  <div class="inner">
-    AERIS
+  <div class="status" id="status">
+    AERIS ONLINE
   </div>
+
+  <div class="circle" id="circle">
+    <div class="inner" id="core">
+      AERIS
+    </div>
+  </div>
+
+  <div class="message" id="message">
+    বাংলায় কথা বলুন...
+  </div>
+
+  <button id="talkButton">
+    🎙️ কথা বলুন
+  </button>
+
 </div>
 
-<div class="message" id="message">
-বাংলায় কথা বলুন...
-</div>
+<script>
 
-<button id="talkButton">
-🎙️ কথা বলুন
-</button>
+const button = document.getElementById("talkButton");
+const message = document.getElementById("message");
+const statusText = document.getElementById("status");
+const circle = document.getElementById("circle");
 
-</div>
+// ১. ভয়েস রেসপন্স (Text-to-Speech)
+function speak(text) {
+  if (!('speechSynthesis' in window)) return;
 
-<script type="module">
+  // আগের থেকে কোনো কথা বলতে থাকলে তা বন্ধ করা
+  window.speechSynthesis.cancel();
 
-import { pipeline } from
-"https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2";
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "bn-BD"; 
+  utterance.rate = 1.0; 
 
-const button =
-document.getElementById("talkButton");
+  utterance.onstart = function() {
+    circle.classList.add("speaking");
+    statusText.innerText = "AERIS SPEAKING";
+  };
 
-const message =
-document.getElementById("message");
+  utterance.onend = function() {
+    circle.classList.remove("speaking");
+    statusText.innerText = "AERIS ONLINE";
+  };
 
-const statusText =
-document.getElementById("status");
+  window.speechSynthesis.speak(utterance);
+}
+
+// ২. স্পিচ রিকগনিশন (Speech-to-Text)
+const SpeechRecognition =
+  window.SpeechRecognition ||
+  window.webkitSpeechRecognition;
 
 let recognition = null;
-let synthesizer = null;
-let loadingTTS = false;
 
-
-/* =========================
-   BENGALI TTS
-========================= */
-
-async function loadVoice(){
-
-  if(synthesizer || loadingTTS){
-    return;
-  }
-
-  loadingTTS = true;
-
-  statusText.innerText =
-  "AERIS VOICE LOADING...";
-
-  message.innerText =
-  "বাংলা ভয়েস প্রস্তুত হচ্ছে... প্রথমবার কিছুটা সময় লাগতে পারে।";
-
-  try{
-
-    synthesizer = await pipeline(
-      "text-to-audio",
-      "naklitechie/mms-tts-bn-ONNX"
-    );
-
-    statusText.innerText =
-    "AERIS ONLINE";
-
-    message.innerText =
-    "বাংলা ভয়েস প্রস্তুত।";
-
-  }catch(error){
-
-    console.error(error);
-
-    synthesizer = null;
-
-    statusText.innerText =
-    "VOICE ERROR";
-
-    message.innerText =
-    "বাংলা ভয়েস লোড করা যায়নি।";
-
-  }
-
-  loadingTTS = false;
-}
-
-
-/* =========================
-   SPEAK
-========================= */
-
-async function speak(text){
-
-  try{
-
-    if(!synthesizer){
-
-      await loadVoice();
-
-    }
-
-    if(!synthesizer){
-      return;
-    }
-
-    statusText.innerText =
-    "AERIS SPEAKING...";
-
-    const output =
-    await synthesizer(text);
-
-    const audioBlob =
-    output.toBlob();
-
-    const audioURL =
-    URL.createObjectURL(audioBlob);
-
-    const audio =
-    new Audio(audioURL);
-
-    audio.onended = function(){
-
-      URL.revokeObjectURL(audioURL);
-
-      statusText.innerText =
-      "AERIS ONLINE";
-
-    };
-
-    await audio.play();
-
-  }catch(error){
-
-    console.error(error);
-
-    statusText.innerText =
-    "AERIS ONLINE";
-
-    message.innerText =
-    "উত্তর তৈরি হয়েছে, কিন্তু ভয়েস চালু করা যায়নি।";
-
-  }
-
-}
-
-
-/* =========================
-   SPEECH RECOGNITION
-========================= */
-
-const SpeechRecognition =
-window.SpeechRecognition ||
-window.webkitSpeechRecognition;
-
-if(!SpeechRecognition){
-
-  message.innerText =
-  "এই ব্রাউজারে Speech Recognition নেই।";
-
+if (!SpeechRecognition) {
+  message.innerText = "আপনার ব্রাউজারে Speech Recognition সাপোর্ট নেই।";
   button.disabled = true;
+} else {
 
-}else{
-
-  recognition =
-  new SpeechRecognition();
-
-  recognition.lang =
-  "bn-BD";
-
-  recognition.continuous =
-  false;
-
-  recognition.interimResults =
-  false;
-
+  recognition = new SpeechRecognition();
+  recognition.lang = "bn-BD";
+  recognition.continuous = false;
+  recognition.interimResults = false;
 
   recognition.onstart = function(){
-
-    button.innerText =
-    "🔴 শুনছি...";
-
-    button.classList.add(
-      "listening"
-    );
-
-    statusText.innerText =
-    "AERIS LISTENING";
-
+    button.innerText = "🔴 শুনছি...";
+    button.classList.add("listening");
+    statusText.innerText = "AERIS LISTENING";
   };
 
-
-  recognition.onresult =
-  function(event){
-
-    const text =
-    event.results[0][0].transcript.trim();
-
-    message.innerText =
-    "আপনি: " + text;
-
+  recognition.onresult = function(event){
+    const text = event.results[0][0].transcript.trim();
+    message.innerText = "আপনি: " + text;
     reply(text);
-
   };
 
+  recognition.onerror = function(event){
+    console.log("Speech error:", event.error);
+    button.innerText = "🎙️ কথা বলুন";
+    button.classList.remove("listening");
+    statusText.innerText = "AERIS ONLINE";
 
-  recognition.onerror =
-  function(event){
-
-    console.log(
-      "Recognition error:",
-      event.error
-    );
-
-    resetButton();
-
-    if(
-      event.error ===
-      "not-allowed"
-    ){
-
-      message.innerText =
-      "মাইক্রোফোনের অনুমতি দিন।";
-
-    }else{
-
-      message.innerText =
-      "আবার চেষ্টা করুন।";
-
+    if(event.error === "not-allowed"){
+      message.innerText = "মাইক্রোফোন অনুমতি দেওয়া হয়নি।";
+    } else {
+      message.innerText = "আবার চেষ্টা করুন।";
     }
-
   };
 
-
-  recognition.onend =
-  function(){
-
-    resetButton();
-
+  recognition.onend = function(){
+    button.innerText = "🎙️ কথা বলুন";
+    button.classList.remove("listening");
   };
-
 }
 
-
-/* =========================
-   BUTTON
-========================= */
-
-button.addEventListener(
-  "click",
-  function(){
-
-    if(!recognition){
-      return;
-    }
-
-    try{
-
-      recognition.start();
-
-    }catch(error){
-
-      console.log(error);
-
-    }
-
+button.addEventListener("click", function(){
+  if(!recognition) return;
+  try{
+    recognition.start();
+  }catch(error){
+    console.log(error);
   }
-);
+});
 
-
-function resetButton(){
-
-  button.innerText =
-  "🎙️ কথা বলুন";
-
-  button.classList.remove(
-    "listening"
-  );
-
-  statusText.innerText =
-  "AERIS ONLINE";
-
-}
-
-
-/* =========================
-   AERIS REPLY
-========================= */
-
+// ৩. ইন্টেলিজেন্ট লজিক হ্যান্ডলার
 function reply(text){
-
   let answer = "";
+  const lowerText = text.toLowerCase();
 
-  if(
-    text.includes("হ্যালো") ||
-    text.includes("হাই")
-  ){
-
-    answer =
-    "হ্যালো! আমি এরিস। আপনাকে কীভাবে সাহায্য করতে পারি?";
-
+  if(lowerText.includes("হ্যালো") || lowerText.includes("হাই")){
+    answer = "হ্যালো! আমি এরিস। আপনাকে কীভাবে সাহায্য করতে পারি?";
   }
-
-  else if(
-    text.includes("কেমন আছো") ||
-    text.includes("কেমন আছেন")
-  ){
-
-    answer =
-    "আমি ভালো আছি। আপনার সাথে কথা বলতে প্রস্তুত।";
-
+  else if(lowerText.includes("কেমন আছো") || lowerText.includes("কেমন আছেন")){
+    answer = "আমি ভালো আছি। আপনার সাথে কথা বলতে প্রস্তুত।";
   }
-
-  else if(
-    text.includes("তোমার নাম") ||
-    text.includes("আপনার নাম") ||
-    text.includes("নাম কি")
-  ){
-
-    answer =
-    "আমার নাম এরিস।";
-
+  else if(lowerText.includes("তোমার নাম") || lowerText.includes("আপনার নাম") || lowerText.includes("নাম কি")){
+    answer = "আমার নাম এরিস।";
   }
-
-  else if(
-    text.includes("কে তুমি") ||
-    text.includes("তুমি কে")
-  ){
-
-    answer =
-    "আমি এরিস, আপনার AI সহকারী।";
-
+  else if(lowerText.includes("কে তুমি") || lowerText.includes("তুমি কে")){
+    answer = "আমি এরিস, আপনার এআই সহকারী।";
   }
-
-  else if(
-    text.includes("ধন্যবাদ")
-  ){
-
-    answer =
-    "আপনাকেও ধন্যবাদ।";
-
+  else if(lowerText.includes("সময় কত") || lowerText.includes("কয়টা বাজে")){
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' });
+    answer = "এখন সময় " + timeString;
   }
-
+  else if(lowerText.includes("তারিখ") || lowerText.includes("আজকে কত তারিখ")){
+    const now = new Date();
+    const dateString = now.toLocaleDateString('bn-BD', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    answer = "আজকে " + dateString;
+  }
+  else if(lowerText.includes("ধন্যবাদ")){
+    answer = "আপনাকেও অসংখ্য ধন্যবাদ!";
+  }
   else{
-
-    answer =
-    "আমি আপনার কথা বুঝতে পেরেছি।";
-
+    answer = "আমি আপনার কথা শুনতে পেয়েছি, কিন্তু এটি করার নির্দেশনা আমার কোডে এখনো দেওয়া হয়নি।";
   }
 
-
-  message.innerText =
-  "AERIS: " + answer;
-
-  speak(answer);
-
+  message.innerText = "AERIS: " + answer;
+  speak(answer); // উত্তর মুখে বলবে
 }
 
 </script>
