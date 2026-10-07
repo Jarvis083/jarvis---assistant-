@@ -3,63 +3,150 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JARVIS Bengali TTS</title>
+
+<title>JARVIS Bengali Voice</title>
+
+<style>
+body{
+margin:0;
+min-height:100vh;
+background:#05080d;
+color:white;
+font-family:Arial,sans-serif;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.box{
+width:90%;
+max-width:500px;
+text-align:center;
+}
+
+h1{
+color:#00d9ff;
+}
+
+textarea{
+width:100%;
+height:120px;
+padding:15px;
+font-size:18px;
+border-radius:10px;
+box-sizing:border-box;
+}
+
+button{
+margin-top:20px;
+padding:15px 30px;
+border:1px solid #00d9ff;
+background:transparent;
+color:#00d9ff;
+border-radius:30px;
+font-size:18px;
+}
+
+#status{
+margin-top:20px;
+color:#00d9ff;
+}
+</style>
 </head>
 
 <body>
 
-<h2>JARVIS Bengali Voice Test</h2>
+<div class="box">
 
-<textarea id="text" rows="5" cols="35">হ্যালো, আমি জার্ভিস।</textarea>
+<h1>JARVIS বাংলা Voice</h1>
 
-<br><br>
+<textarea id="text">হ্যালো, আমি জার্ভিস।</textarea>
+
+<br>
 
 <button onclick="speak()">🔊 কথা বলুন</button>
+
+<div id="status">READY</div>
+
+</div>
 
 <script type="module">
 
 import { pipeline }
-from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2";
+from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
 
-let tts = null;
+let synthesizer = null;
 
 async function speak(){
-
-if(!tts){
-
-alert("প্রথমবার Bengali voice model লোড হচ্ছে। একটু অপেক্ষা করো।");
-
-tts = await pipeline(
-"text-to-speech",
-"Xenova/mms-tts-ben",
-{dtype:"q8"}
-);
-
-}
 
 const text =
 document.getElementById("text").value;
 
-const output = await tts(text);
+const status =
+document.getElementById("status");
 
-const audio =
-new Audio(
-URL.createObjectURL(
-new Blob(
-[encodeWav(output.audio, output.sampling_rate)],
-{type:"audio/wav"}
-)
-)
+try{
+
+status.innerText =
+"বাংলা Voice লোড হচ্ছে...";
+
+if(!synthesizer){
+
+synthesizer = await pipeline(
+"text-to-audio",
+"naklitechie/mms-tts-bn-ONNX",
+{
+dtype:"q8"
+}
 );
-
-audio.play();
 
 }
 
-function encodeWav(samples, sampleRate){
+status.innerText =
+"কথা তৈরি হচ্ছে...";
+
+const output =
+await synthesizer(text);
+
+const audio =
+new Audio();
+
+const wav =
+encodeWAV(
+output.audio,
+output.sampling_rate
+);
+
+audio.src =
+URL.createObjectURL(
+new Blob(
+[wav],
+{type:"audio/wav"}
+)
+);
+
+await audio.play();
+
+status.innerText =
+"READY";
+
+}catch(error){
+
+console.error(error);
+
+status.innerText =
+"ERROR: " + error.message;
+
+}
+
+}
+
+function encodeWAV(samples, sampleRate){
 
 const buffer =
-new ArrayBuffer(44 + samples.length * 2);
+new ArrayBuffer(
+44 + samples.length * 2
+);
 
 const view =
 new DataView(buffer);
@@ -67,14 +154,23 @@ new DataView(buffer);
 function writeString(offset,string){
 
 for(let i=0;i<string.length;i++){
-view.setUint8(offset+i,string.charCodeAt(i));
+
+view.setUint8(
+offset+i,
+string.charCodeAt(i)
+);
+
 }
 
 }
 
 writeString(0,"RIFF");
 
-view.setUint32(4,36 + samples.length * 2,true);
+view.setUint32(
+4,
+36 + samples.length * 2,
+true
+);
 
 writeString(8,"WAVE");
 
@@ -86,9 +182,17 @@ view.setUint16(20,1,true);
 
 view.setUint16(22,1,true);
 
-view.setUint32(24,sampleRate,true);
+view.setUint32(
+24,
+sampleRate,
+true
+);
 
-view.setUint32(28,sampleRate*2,true);
+view.setUint32(
+28,
+sampleRate * 2,
+true
+);
 
 view.setUint16(32,2,true);
 
@@ -96,21 +200,31 @@ view.setUint16(34,16,true);
 
 writeString(36,"data");
 
-view.setUint32(40,samples.length*2,true);
-
-let offset=44;
-
-for(let i=0;i<samples.length;i++){
-
-let s=Math.max(-1,Math.min(1,samples[i]));
-
-view.setInt16(
-offset,
-s < 0 ? s * 0x8000 : s * 0x7fff,
+view.setUint32(
+40,
+samples.length * 2,
 true
 );
 
-offset+=2;
+let offset = 44;
+
+for(let i=0;i<samples.length;i++){
+
+const sample =
+Math.max(
+-1,
+Math.min(1,samples[i])
+);
+
+view.setInt16(
+offset,
+sample < 0
+? sample * 0x8000
+: sample * 0x7fff,
+true
+);
+
+offset += 2;
 
 }
 
