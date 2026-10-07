@@ -7,74 +7,74 @@
 
 <style>
 body{
-    margin:0;
-    min-height:100vh;
-    background:#05080d;
-    color:white;
-    font-family:Arial,sans-serif;
-    display:flex;
-    justify-content:center;
-    align-items:center;
+margin:0;
+min-height:100vh;
+background:#05080d;
+color:white;
+font-family:Arial,sans-serif;
+display:flex;
+justify-content:center;
+align-items:center;
 }
 
 .container{
-    width:90%;
-    max-width:500px;
-    text-align:center;
+width:90%;
+max-width:500px;
+text-align:center;
 }
 
 h1{
-    font-size:48px;
-    letter-spacing:10px;
-    color:#00d9ff;
-    text-shadow:0 0 20px #00d9ff;
+font-size:48px;
+letter-spacing:10px;
+color:#00d9ff;
+text-shadow:0 0 20px #00d9ff;
 }
 
 .status{
-    color:#00d9ff;
-    letter-spacing:2px;
+color:#00d9ff;
+letter-spacing:2px;
 }
 
 .circle{
-    width:200px;
-    height:200px;
-    margin:50px auto;
-    border:2px solid #00d9ff;
-    border-radius:50%;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    box-shadow:0 0 30px #00d9ff;
+width:200px;
+height:200px;
+margin:50px auto;
+border:2px solid #00d9ff;
+border-radius:50%;
+display:flex;
+justify-content:center;
+align-items:center;
+box-shadow:0 0 30px #00d9ff;
 }
 
 .inner{
-    width:120px;
-    height:120px;
-    border:2px solid white;
-    border-radius:50%;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    color:#00d9ff;
+width:120px;
+height:120px;
+border:2px solid white;
+border-radius:50%;
+display:flex;
+justify-content:center;
+align-items:center;
+color:#00d9ff;
 }
 
 .message{
-    padding:20px;
-    border:1px solid #183746;
-    border-radius:12px;
-    background:#081018;
-    margin-bottom:20px;
-    line-height:1.6;
+padding:20px;
+border:1px solid #183746;
+border-radius:12px;
+background:#081018;
+margin-bottom:20px;
+line-height:1.6;
 }
 
 button{
-    padding:14px 30px;
-    border-radius:30px;
-    border:1px solid #00d9ff;
-    background:transparent;
-    color:#00d9ff;
-    font-size:16px;
-    cursor:pointer;
+padding:14px 30px;
+border-radius:30px;
+border:1px solid #00d9ff;
+background:transparent;
+color:#00d9ff;
+font-size:16px;
+cursor:pointer;
 }
 </style>
 </head>
@@ -140,14 +140,62 @@ recognition.onresult = function(event){
 const text =
 event.results[0][0].transcript;
 
+let reply =
+"দুঃখিত, আমি এখনো এই প্রশ্নের উত্তর জানি না।";
+
+if(text.includes("হ্যালো") || text.includes("হাই")){
+
+reply =
+"হ্যালো! আমি এরিস। আপনাকে কীভাবে সাহায্য করতে পারি?";
+
+}
+
+else if(
+text.includes("কেমন আছো") ||
+text.includes("কেমন আছেন")
+){
+
+reply =
+"আমি ভালো আছি। আপনার সাথে কথা বলতে প্রস্তুত।";
+
+}
+
+else if(
+text.includes("তোমার নাম") ||
+text.includes("আপনার নাম")
+){
+
+reply =
+"আমার নাম এরিস।";
+
+}
+
+else if(
+text.includes("কে তুমি") ||
+text.includes("তুমি কে")
+){
+
+reply =
+"আমি এরিস, আপনার বাংলা AI সহকারী।";
+
+}
+
+else if(text.includes("ধন্যবাদ")){
+
+reply =
+"আপনাকেও ধন্যবাদ।";
+
+}
+
 document.getElementById("message").innerText =
-"আপনি বলেছেন: " + text;
+reply;
 
 document.getElementById("status").innerText =
-"AERIS বুঝেছে";
+"AERIS উত্তর দিয়েছে";
 
 document.getElementById("core").innerText =
 "OK";
+
 };
 
 recognition.onerror = function(event){
@@ -160,6 +208,7 @@ document.getElementById("message").innerText =
 
 document.getElementById("core").innerText =
 "ERROR";
+
 };
 
 recognition.onend = function(){
