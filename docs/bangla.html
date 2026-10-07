@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>JARVIS বাংলা</title>
+
+<style>
+
+*{
+box-sizing:border-box;
+}
+
+body{
+margin:0;
+min-height:100vh;
+background:#05080d;
+color:white;
+font-family:Arial,sans-serif;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.jarvis{
+width:100%;
+max-width:500px;
+min-height:100vh;
+padding:30px 20px;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+}
+
+h1{
+font-size:40px;
+letter-spacing:6px;
+margin:0;
+}
+
+.status{
+margin-top:10px;
+color:#00d9ff;
+font-size:14px;
+letter-spacing:2px;
+}
+
+.core{
+width:210px;
+height:210px;
+margin:50px 0;
+border-radius:50%;
+border:2px solid #00d9ff;
+display:flex;
+align-items:center;
+justify-content:center;
+box-shadow:
+0 0 20px #00d9ff,
+0 0 60px rgba(0,217,255,.4);
+animation:pulse 2s infinite;
+}
+
+.core-inner{
+width:130px;
+height:130px;
+border-radius:50%;
+border:2px solid white;
+display:flex;
+align-items:center;
+justify-content:center;
+color:#00d9ff;
+font-size:18px;
+}
+
+@keyframes pulse{
+
+0%,100%{
+transform:scale(1);
+}
+
+50%{
+transform:scale(1.05);
+}
+
+}
+
+.message{
+width:100%;
+min-height:90px;
+padding:18px;
+border:1px solid #183746;
+border-radius:12px;
+background:#081018;
+text-align:center;
+color:#b8c7d1;
+margin-bottom:20px;
+}
+
+button{
+border:1px solid #00d9ff;
+background:transparent;
+color:#00d9ff;
+padding:14px 30px;
+border-radius:30px;
+font-size:16px;
+margin:5px;
+}
+
+button:active{
+background:#00d9ff;
+color:#000;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="jarvis">
+
+<h1>JARVIS</h1>
+
+<div class="status" id="status">
+SYSTEM ONLINE
+</div>
+
+<div class="core">
+
+<div class="core-inner" id="coreText">
+READY
+</div>
+
+</div>
+
+<div class="message" id="message">
+বাংলায় কথা বলুন...
+</div>
+
+<button onclick="listen()">
+🎙️ কথা বলুন
+</button>
+
+</div>
+
+<script>
+
+const SpeechRecognition =
+window.SpeechRecognition ||
+window.webkitSpeechRecognition;
+
+let recognition;
+
+function listen(){
+
+if(!SpeechRecognition){
+
+document.getElementById("message").innerText =
+"এই ব্রাউজারে Speech Recognition নেই।";
+
+return;
+
+}
+
+recognition = new SpeechRecognition();
+
+recognition.lang = "bn-BD";
+
+recognition.continuous = false;
+
+recognition.interimResults = false;
+
+recognition.start();
+
+document.getElementById("status").innerText =
+"শুনছি...";
+
+document.getElementById("coreText").innerText =
+"LISTEN";
+
+recognition.onresult = function(event){
+
+const text =
+event.results[0][0].transcript;
+
+document.getElementById("message").innerText =
+"আপনি বলেছেন: " + text;
+
+document.getElementById("status").innerText =
+"কথা বুঝেছি";
+
+document.getElementById("coreText").innerText =
+"OK";
+
+};
+
+recognition.onerror = function(event){
+
+document.getElementById("status").innerText =
+"ERROR";
+
+document.getElementById("message").innerText =
+"সমস্যা: " + event.error;
+
+document.getElementById("coreText").innerText =
+"ERROR";
+
+};
+
+recognition.onend = function(){
+
+setTimeout(function(){
+
+document.getElementById("status").innerText =
+"SYSTEM ONLINE";
+
+document.getElementById("coreText").innerText =
+"READY";
+
+},1000);
+
+};
+
+}
+
+</script>
+
+</body>
+</html>
