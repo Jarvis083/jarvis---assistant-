@@ -186,7 +186,17 @@ event.results[0][0].transcript;
 
 document.getElementById("message").innerText =
 "আপনি বলেছেন: " + text;
+if(text.includes("হ্যালো") || text.includes("হাই")){
 
+document.getElementById("message").innerText =
+"হ্যালো। আমি জার্ভিস। আপনাকে কীভাবে সাহায্য করতে পারি?";
+
+}else{
+
+document.getElementById("message").innerText =
+"আপনি বলেছেন: " + text;
+
+}
 document.getElementById("status").innerText =
 "কথা বুঝেছি";
 
