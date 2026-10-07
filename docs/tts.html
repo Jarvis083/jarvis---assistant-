@@ -1,191 +1,199 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>JARVIS বাংলা Voice</title>
 
 <style>
-
 *{
-box-sizing:border-box;
+    box-sizing:border-box;
 }
 
 body{
-margin:0;
-min-height:100vh;
-background:#05080d;
-color:white;
-font-family:Arial,sans-serif;
-display:flex;
-justify-content:center;
-align-items:center;
+    margin:0;
+    min-height:100vh;
+    background:#05080d;
+    color:white;
+    font-family:Arial,sans-serif;
+    display:flex;
+    justify-content:center;
+    align-items:center;
 }
 
-.jarvis{
-width:90%;
-max-width:500px;
-text-align:center;
+.container{
+    width:90%;
+    max-width:500px;
+    text-align:center;
 }
 
 h1{
-margin:0;
-font-size:32px;
-letter-spacing:5px;
-color:#00d9ff;
-text-shadow:0 0 15px #00d9ff;
+    color:#00d9ff;
+    letter-spacing:5px;
+    margin-bottom:8px;
 }
 
 .subtitle{
-margin-top:10px;
-color:#8da4b3;
-font-size:14px;
+    color:#8ca5b5;
+    margin-bottom:30px;
 }
 
 textarea{
-width:100%;
-height:130px;
-margin-top:35px;
-padding:18px;
-background:#081018;
-border:1px solid #00d9ff;
-border-radius:15px;
-color:white;
-font-size:18px;
-outline:none;
-resize:none;
+    width:100%;
+    height:130px;
+    padding:15px;
+    border-radius:15px;
+    border:1px solid #00d9ff;
+    background:#081018;
+    color:white;
+    font-size:18px;
+    resize:none;
+    outline:none;
 }
 
 button{
-margin-top:20px;
-padding:15px 35px;
-border:1px solid #00d9ff;
-background:transparent;
-color:#00d9ff;
-border-radius:30px;
-font-size:17px;
-cursor:pointer;
-box-shadow:0 0 12px rgba(0,217,255,.3);
+    margin-top:20px;
+    padding:15px 35px;
+    border:1px solid #00d9ff;
+    border-radius:30px;
+    background:transparent;
+    color:#00d9ff;
+    font-size:17px;
 }
 
-button:active{
-background:#00d9ff;
-color:#000;
+button:disabled{
+    opacity:.5;
 }
 
 #status{
-margin-top:25px;
-color:#00d9ff;
-font-size:14px;
-letter-spacing:2px;
+    margin-top:25px;
+    color:#00d9ff;
+    font-size:14px;
 }
 
 .circle{
-width:120px;
-height:120px;
-margin:35px auto 0;
-border-radius:50%;
-border:2px solid #00d9ff;
-display:flex;
-align-items:center;
-justify-content:center;
-color:#00d9ff;
-box-shadow:
-0 0 15px #00d9ff,
-0 0 40px rgba(0,217,255,.3);
-animation:pulse 2s infinite;
+    width:110px;
+    height:110px;
+    margin:0 auto 30px;
+    border-radius:50%;
+    border:2px solid #00d9ff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#00d9ff;
+    box-shadow:0 0 25px rgba(0,217,255,.5);
 }
-
-@keyframes pulse{
-
-0%,100%{
-transform:scale(1);
-}
-
-50%{
-transform:scale(1.06);
-}
-
-}
-
 </style>
-
 </head>
 
 <body>
 
-<div class="jarvis">
+<div class="container">
 
-<h1>JARVIS</h1>
+    <h1>JARVIS</h1>
 
-<div class="subtitle">
-বাংলা AI VOICE
+    <div class="subtitle">
+        বাংলা AI VOICE
+    </div>
+
+    <div class="circle">
+        VOICE
+    </div>
+
+    <textarea id="text">হ্যালো, আমি জার্ভিস। আপনাকে কীভাবে সাহায্য করতে পারি?</textarea>
+
+    <br>
+
+    <button id="speakButton">
+        🔊 কথা বলুন
+    </button>
+
+    <div id="status">
+        READY
+    </div>
+
 </div>
 
-<div class="circle">
-VOICE
-</div>
+<script type="module">
 
-<textarea id="text">হ্যালো, আমি জার্ভিস। আপনাকে কীভাবে সাহায্য করতে পারি?</textarea>
-
-<br>
-
-<button id="speak">
-🔊 কথা বলুন
-</button>
-
-<div id="status">
-READY
-</div>
-
-</div>
-
-<script>
+import { pipeline }
+from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
 
 const button =
-document.getElementById("speak");
+document.getElementById("speakButton");
 
-const text =
+const textBox =
 document.getElementById("text");
 
 const status =
 document.getElementById("status");
 
-button.onclick = function(){
+let synthesizer = null;
 
-const message =
-text.value;
+button.addEventListener("click", async () => {
 
-if(!message){
-return;
-}
+    try {
 
-const voice =
-new SpeechSynthesisUtterance(message);
+        button.disabled = true;
 
-voice.lang = "bn-BD";
+        status.innerText =
+        "VOICE MODEL LOADING...";
 
-voice.rate = 0.9;
+        if (!synthesizer) {
 
-voice.pitch = 0.8;
+            synthesizer = await pipeline(
+                "text-to-speech",
+                "Xenova/mms-tts-ben"
+            );
 
-speechSynthesis.cancel();
+        }
 
-status.innerText =
-"SPEAKING...";
+        status.innerText =
+        "VOICE GENERATING...";
 
-voice.onend = function(){
+        const output =
+        await synthesizer(textBox.value);
 
-status.innerText =
-"READY";
+        const audio =
+        new Audio(
+            URL.createObjectURL(
+                output.toBlob()
+            )
+        );
 
-};
+        audio.onended = () => {
 
-speechSynthesis.speak(voice);
+            status.innerText =
+            "READY";
 
-};
+            button.disabled = false;
+
+        };
+
+        audio.onerror = () => {
+
+            status.innerText =
+            "AUDIO ERROR";
+
+            button.disabled = false;
+
+        };
+
+        await audio.play();
+
+    } catch(error) {
+
+        console.error(error);
+
+        status.innerText =
+        "ERROR: " + error.message;
+
+        button.disabled = false;
+
+    }
+
+});
 
 </script>
 
