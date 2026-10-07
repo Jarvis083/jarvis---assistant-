@@ -261,12 +261,17 @@ speechSynthesis.onvoiceschanged = function(){
 
 const voices = speechSynthesis.getVoices();
 
-let names = voices.map(function(v){
+const usefulVoices = voices.filter(function(v){
+return v.lang.toLowerCase().startsWith("bn") ||
+       v.lang.toLowerCase().startsWith("en");
+});
+
+let names = usefulVoices.map(function(v){
 return v.name + " (" + v.lang + ")";
 }).join("\n");
 
 document.getElementById("message").innerText =
-names || "No voices found";
+names || "No Bangla or English voices found";
 
 };
 </script>
