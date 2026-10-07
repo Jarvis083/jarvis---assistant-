@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JARVIS Voice</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+margin:0;
+min-height:100vh;
+background:#05080d;
+color:white;
+font-family:Arial,sans-serif;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.jarvis{
+width:100%;
+max-width:500px;
+min-height:100vh;
+padding:30px 20px;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+}
+
+h1{
+margin:0;
+font-size:42px;
+letter-spacing:8px;
+}
+
+.status{
+margin-top:10px;
+color:#00d9ff;
+font-size:14px;
+letter-spacing:2px;
+}
+
+.core{
+width:210px;
+height:210px;
+margin:50px 0;
+border-radius:50%;
+border:2px solid #00d9ff;
+display:flex;
+align-items:center;
+justify-content:center;
+box-shadow:0 0 20px #00d9ff,0 0 60px rgba(0,217,255,.4);
+animation:pulse 2s infinite;
+}
+
+.core-inner{
+width:130px;
+height:130px;
+border-radius:50%;
+border:2px solid white;
+display:flex;
+align-items:center;
+justify-content:center;
+color:#00d9ff;
+font-size:18px;
+}
+
+@keyframes pulse{
+0%,100%{transform:scale(1)}
+50%{transform:scale(1.05)}
+}
+
+.message{
+width:100%;
+min-height:80px;
+padding:15px;
+border:1px solid #183746;
+border-radius:12px;
+background:#081018;
+text-align:center;
+color:#b8c7d1;
+margin-bottom:20px;
+}
+
+button{
+border:1px solid #00d9ff;
+background:transparent;
+color:#00d9ff;
+padding:14px 30px;
+border-radius:30px;
+font-size:16px;
+margin:5px;
+}
+
+button:active{
+background:#00d9ff;
+color:#000;
+}
+</style>
+</head>
+
+<body>
+
+<div class="jarvis">
+
+<h1>JARVIS</h1>
+
+<div class="status" id="status">
+SYSTEM ONLINE
+</div>
+
+<div class="core">
+<div class="core-inner" id="coreText">
+READY
+</div>
+</div>
+
+<div class="message" id="message">
+Press LISTEN and speak.
+</div>
+
+<button onclick="listen()">🎙️ LISTEN</button>
+
+<button onclick="speakTest()">🔊 TEST VOICE</button>
+
+</div>
+
+<script>
+
+const SpeechRecognition =
+window.SpeechRecognition ||
+window.webkitSpeechRecognition;
+
+let recognition;
+
+function speak(text){
+
+const voice = new SpeechSynthesisUtterance(text);
+
+voice.lang = "en-US";
+voice.rate = 0.9;
+voice.pitch = 0.8;
+
+speechSynthesis.cancel();
+
+speechSynthesis.speak(voice);
+
+}
+
+function speakTest(){
+
+const text = "Hello. I am JARVIS. I am ready.";
+
+document.getElementById("message").innerText = text;
+
+document.getElementById("status").innerText = "SPEAKING";
+
+speak(text);
+
+setTimeout(function(){
+
+document.getElementById("status").innerText =
+"SYSTEM ONLINE";
+
+},3000);
+
+}
+
+function listen(){
+
+if(!SpeechRecognition){
+
+document.getElementById("message").innerText =
+"Speech recognition is not supported in this browser.";
+
+return;
+
+}
+
+recognition = new SpeechRecognition();
+
+recognition.lang = "en-US";
+
+recognition.continuous = false;
+
+recognition.interimResults = false;
+
+recognition.start();
+
+document.getElementById("status").innerText =
+"LISTENING...";
+
+document.getElementById("coreText").innerText =
+"LISTEN";
+
+recognition.onresult = function(event){
+
+const text =
+event.results[0][0].transcript;
+
+document.getElementById("message").innerText =
+"You said: " + text;
+
+document.getElementById("status").innerText =
+"PROCESSING...";
+
+document.getElementById("coreText").innerText =
+"OK";
+
+speak("I heard you say " + text);
+
+};
+
+recognition.onerror = function(event){
+
+document.getElementById("status").innerText =
+"ERROR";
+
+document.getElementById("message").innerText =
+"Microphone error: " + event.error;
+
+document.getElementById("coreText").innerText =
+"ERROR";
+
+};
+
+recognition.onend = function(){
+
+setTimeout(function(){
+
+document.getElementById("status").innerText =
+"SYSTEM ONLINE";
+
+document.getElementById("coreText").innerText =
+"READY";
+
+},1000);
+
+};
+
+}
+
+</script>
+
+</body>
+</html>
