@@ -6,6 +6,8 @@
 <title>AERIS</title>
 
 <style>
+*{box-sizing:border-box}
+
 body{
 margin:0;
 min-height:100vh;
@@ -76,6 +78,10 @@ color:#00d9ff;
 font-size:16px;
 cursor:pointer;
 }
+
+button:disabled{
+opacity:.5;
+}
 </style>
 </head>
 
@@ -96,135 +102,264 @@ AERIS
 </div>
 
 <div class="message" id="message">
-বাংলায় কথা বলুন...
+প্রথমবার ভয়েস প্রস্তুত হতে কিছু সময় লাগতে পারে।
 </div>
 
-<button onclick="listen()">
+<button id="talkButton" onclick="listen()">
 🎙️ কথা বলুন
 </button>
 
 </div>
 
-<script>
+<script type="module">
+
+import { pipeline } from
+"https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2";
+
+
+let synthesizer = null;
+
+
+/* =========================
+   AERIS VOICE ENGINE
+========================= */
+
+async function loadVoice(){
+
+    if(synthesizer){
+        return true;
+    }
+
+    document.getElementById("status").innerText =
+    "AERIS ভয়েস প্রস্তুত করছে...";
+
+    document.getElementById("core").innerText =
+    "LOAD";
+
+    try{
+
+        synthesizer = await pipeline(
+            "text-to-speech",
+            "facebook/mms-tts-ben"
+        );
+
+        document.getElementById("status").innerText =
+        "AERIS ONLINE";
+
+        document.getElementById("core").innerText =
+        "AERIS";
+
+        return true;
+
+    }catch(error){
+
+        console.error(error);
+
+        document.getElementById("status").innerText =
+        "VOICE ERROR";
+
+        document.getElementById("message").innerText =
+        "বাংলা ভয়েস লোড করা যায়নি।";
+
+        document.getElementById("core").innerText =
+        "ERROR";
+
+        return false;
+    }
+}
+
+
+/* =========================
+   SPEAK
+========================= */
+
+async function speak(text){
+
+    const ready = await loadVoice();
+
+    if(!ready){
+        return;
+    }
+
+    try{
+
+        document.getElementById("status").innerText =
+        "AERIS কথা বলছে...";
+
+        document.getElementById("core").innerText =
+        "SPEAK";
+
+        const output =
+        await synthesizer(text);
+
+        const blob =
+        output.toBlob();
+
+        const audioURL =
+        URL.createObjectURL(blob);
+
+        const audio =
+        new Audio(audioURL);
+
+        audio.onended = function(){
+
+            URL.revokeObjectURL(audioURL);
+
+            document.getElementById("status").innerText =
+            "AERIS ONLINE";
+
+            document.getElementById("core").innerText =
+            "AERIS";
+        };
+
+        await audio.play();
+
+    }catch(error){
+
+        console.error(error);
+
+        document.getElementById("status").innerText =
+        "VOICE ERROR";
+
+        document.getElementById("message").innerText =
+        "ভয়েস চালু করা যায়নি।";
+
+        document.getElementById("core").innerText =
+        "ERROR";
+    }
+}
+
+
+/* =========================
+   LISTEN
+========================= */
 
 function listen(){
 
-const SpeechRecognition =
-window.SpeechRecognition ||
-window.webkitSpeechRecognition;
+    const SpeechRecognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
 
-if(!SpeechRecognition){
+    if(!SpeechRecognition){
 
-document.getElementById("message").innerText =
-"এই ব্রাউজারে বাংলা Speech Recognition নেই।";
+        document.getElementById("message").innerText =
+        "এই ব্রাউজারে Speech Recognition নেই।";
 
-return;
-}
+        return;
+    }
 
-const recognition = new SpeechRecognition();
+    const recognition =
+    new SpeechRecognition();
 
-recognition.lang = "bn-BD";
-recognition.continuous = false;
-recognition.interimResults = false;
+    recognition.lang = "bn-BD";
+    recognition.continuous = false;
+    recognition.interimResults = false;
 
-document.getElementById("status").innerText =
-"AERIS শুনছে...";
+    document.getElementById("status").innerText =
+    "AERIS শুনছে...";
 
-document.getElementById("core").innerText =
-"LISTEN";
+    document.getElementById("core").innerText =
+    "LISTEN";
 
-recognition.start();
+    recognition.start();
 
-recognition.onresult = function(event){
 
-const text =
-event.results[0][0].transcript;
+    recognition.onresult = async function(event){
 
-let reply =
-"দুঃখিত, আমি এখনো এই প্রশ্নের উত্তর জানি না।";
+        const text =
+        event.results[0][0].transcript;
 
-if(text.includes("হ্যালো") || text.includes("হাই")){
+        let reply =
+        "দুঃখিত, আমি এখনো এই প্রশ্নের উত্তর জানি না।";
 
-reply =
-"হ্যালো! আমি এরিস। আপনাকে কীভাবে সাহায্য করতে পারি?";
 
-}
+        if(
+        text.includes("হ্যালো") ||
+        text.includes("হাই")
+        ){
 
-else if(
-text.includes("কেমন আছো") ||
-text.includes("কেমন আছেন")
-){
+            reply =
+            "হ্যালো! আমি এরিস। আপনাকে কীভাবে সাহায্য করতে পারি।";
+        }
 
-reply =
-"আমি ভালো আছি। আপনার সাথে কথা বলতে প্রস্তুত।";
+        else if(
+        text.includes("কেমন আছো") ||
+        text.includes("কেমন আছেন")
+        ){
 
-}
+            reply =
+            "আমি ভালো আছি। আপনার সাথে কথা বলতে প্রস্তুত।";
+        }
 
-else if(
-text.includes("তোমার নাম") ||
-text.includes("আপনার নাম")
-){
+        else if(
+        text.includes("তোমার নাম") ||
+        text.includes("আপনার নাম") ||
+        text.includes("নাম কি")
+        ){
 
-reply =
-"আমার নাম এরিস।";
+            reply =
+            "আমার নাম এরিস।";
+        }
 
-}
+        else if(
+        text.includes("কে তুমি") ||
+        text.includes("তুমি কে")
+        ){
 
-else if(
-text.includes("কে তুমি") ||
-text.includes("তুমি কে")
-){
+            reply =
+            "আমি এরিস, আপনার বাংলা AI সহকারী।";
+        }
 
-reply =
-"আমি এরিস, আপনার বাংলা AI সহকারী।";
+        else if(
+        text.includes("ধন্যবাদ")
+        ){
 
-}
+            reply =
+            "আপনাকেও ধন্যবাদ।";
+        }
 
-else if(text.includes("ধন্যবাদ")){
 
-reply =
-"আপনাকেও ধন্যবাদ।";
+        document.getElementById("message").innerText =
+        reply;
 
-}
+        document.getElementById("status").innerText =
+        "AERIS উত্তর প্রস্তুত করছে...";
 
-document.getElementById("message").innerText =
-reply;
+        document.getElementById("core").innerText =
+        "THINK";
 
-document.getElementById("status").innerText =
-"AERIS উত্তর দিয়েছে";
 
-document.getElementById("core").innerText =
-"OK";
+        await speak(reply);
+    };
 
-};
 
-recognition.onerror = function(event){
+    recognition.onerror = function(event){
 
-document.getElementById("status").innerText =
-"AERIS ERROR";
+        document.getElementById("status").innerText =
+        "AERIS ERROR";
 
-document.getElementById("message").innerText =
-"সমস্যা: " + event.error;
+        document.getElementById("message").innerText =
+        "সমস্যা: " + event.error;
 
-document.getElementById("core").innerText =
-"ERROR";
+        document.getElementById("core").innerText =
+        "ERROR";
+    };
 
-};
 
-recognition.onend = function(){
+    recognition.onend = function(){
 
-setTimeout(function(){
+        if(
+        document.getElementById("status").innerText ===
+        "AERIS শুনছে..."
+        ){
 
-document.getElementById("status").innerText =
-"AERIS ONLINE";
+            document.getElementById("status").innerText =
+            "AERIS ONLINE";
 
-document.getElementById("core").innerText =
-"AERIS";
-
-},1000);
-
-};
-
+            document.getElementById("core").innerText =
+            "AERIS";
+        }
+    };
 }
 
 </script>
