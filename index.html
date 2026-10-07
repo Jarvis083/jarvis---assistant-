@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>AERIS</title>
 
 <style>
@@ -19,9 +18,9 @@ body{
 }
 
 .container{
-    text-align:center;
     width:90%;
     max-width:500px;
+    text-align:center;
 }
 
 h1{
@@ -34,7 +33,6 @@ h1{
 .status{
     color:#00d9ff;
     letter-spacing:2px;
-    margin-top:-10px;
 }
 
 .circle{
@@ -66,6 +64,7 @@ h1{
     border-radius:12px;
     background:#081018;
     margin-bottom:20px;
+    line-height:1.6;
 }
 
 button{
@@ -75,6 +74,7 @@ button{
     background:transparent;
     color:#00d9ff;
     font-size:16px;
+    cursor:pointer;
 }
 </style>
 </head>
@@ -85,25 +85,100 @@ button{
 
 <h1>AERIS</h1>
 
-<div class="status">
+<div class="status" id="status">
 AERIS ONLINE
 </div>
 
 <div class="circle">
-<div class="inner">
+<div class="inner" id="core">
 AERIS
 </div>
 </div>
 
-<div class="message">
+<div class="message" id="message">
 বাংলায় কথা বলুন...
 </div>
 
-<button>
+<button onclick="listen()">
 🎙️ কথা বলুন
 </button>
 
 </div>
+
+<script>
+
+function listen(){
+
+const SpeechRecognition =
+window.SpeechRecognition ||
+window.webkitSpeechRecognition;
+
+if(!SpeechRecognition){
+
+document.getElementById("message").innerText =
+"এই ব্রাউজারে বাংলা Speech Recognition নেই।";
+
+return;
+}
+
+const recognition = new SpeechRecognition();
+
+recognition.lang = "bn-BD";
+recognition.continuous = false;
+recognition.interimResults = false;
+
+document.getElementById("status").innerText =
+"AERIS শুনছে...";
+
+document.getElementById("core").innerText =
+"LISTEN";
+
+recognition.start();
+
+recognition.onresult = function(event){
+
+const text =
+event.results[0][0].transcript;
+
+document.getElementById("message").innerText =
+"আপনি বলেছেন: " + text;
+
+document.getElementById("status").innerText =
+"AERIS বুঝেছে";
+
+document.getElementById("core").innerText =
+"OK";
+};
+
+recognition.onerror = function(event){
+
+document.getElementById("status").innerText =
+"AERIS ERROR";
+
+document.getElementById("message").innerText =
+"সমস্যা: " + event.error;
+
+document.getElementById("core").innerText =
+"ERROR";
+};
+
+recognition.onend = function(){
+
+setTimeout(function(){
+
+document.getElementById("status").innerText =
+"AERIS ONLINE";
+
+document.getElementById("core").innerText =
+"AERIS";
+
+},1000);
+
+};
+
+}
+
+</script>
 
 </body>
 </html>
