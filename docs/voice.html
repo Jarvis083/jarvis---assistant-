@@ -257,7 +257,18 @@ document.getElementById("coreText").innerText =
 };
 
 }
+speechSynthesis.onvoiceschanged = function(){
 
+const voices = speechSynthesis.getVoices();
+
+let names = voices.map(function(v){
+return v.name + " (" + v.lang + ")";
+}).join("\n");
+
+document.getElementById("message").innerText =
+names || "No voices found";
+
+};
 </script>
 
 </body>
