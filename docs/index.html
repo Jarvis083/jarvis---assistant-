@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>AERIS - AI Assistant</title>
 
 <style>
@@ -148,34 +149,39 @@ const message = document.getElementById("message");
 const statusText = document.getElementById("status");
 const circle = document.getElementById("circle");
 
-// ১. ভয়েস ইঞ্জিন লোড করা
+// ১. ভয়েস প্রিপেয়ার এবং সাউন্ড অন করার ফিক্স
+let synth = window.speechSynthesis;
 let voices = [];
-function loadVoices() {
-  if ('speechSynthesis' in window) {
-    voices = window.speechSynthesis.getVoices();
+
+function populateVoices() {
+  if(synth) {
+    voices = synth.getVoices();
   }
 }
-loadVoices();
-if ('speechSynthesis' in window && window.speechSynthesis.onvoiceschanged !== undefined) {
-  window.speechSynthesis.onvoiceschanged = loadVoices;
+
+populateVoices();
+if (synth && synth.onvoiceschanged !== undefined) {
+  synth.onvoiceschanged = populateVoices;
 }
 
-// ২. উন্নত Text-to-Speech (TTS) ফাংশন
+// ২. স্পিচ ফাংশন (গ্যারান্টিড ভয়েস আউটপুট)
 function speak(text) {
-  if (!('speechSynthesis' in window)) return;
+  if (!synth) return;
 
-  window.speechSynthesis.cancel(); // আগের কথা বন্ধ করা
+  // আগের কথা বন্ধ করা
+  synth.cancel();
 
   const utterance = new SpeechSynthesisUtterance(text);
   
-  // বাংলা ভয়েস খোঁজা
-  const bnVoice = voices.find(voice => voice.lang.includes('bn') || voice.lang.includes('BD'));
-  if (bnVoice) {
-    utterance.voice = bnVoice;
+  // বাংলা ভয়েস নির্বাচন করার চেষ্টা করা
+  let banglaVoice = voices.find(v => v.lang.includes('bn') || v.lang.includes('BD'));
+  if (banglaVoice) {
+    utterance.voice = banglaVoice;
   }
-  
+
   utterance.lang = "bn-BD"; 
   utterance.rate = 0.9; 
+  utterance.pitch = 1.0;
 
   utterance.onstart = function() {
     circle.classList.add("speaking");
@@ -187,13 +193,12 @@ function speak(text) {
     statusText.innerText = "AERIS ONLINE";
   };
 
-  utterance.onerror = function(e) {
-    console.log("TTS Error:", e);
+  utterance.onerror = function() {
     circle.classList.remove("speaking");
     statusText.innerText = "AERIS ONLINE";
   };
 
-  window.speechSynthesis.speak(utterance);
+  synth.speak(utterance);
 }
 
 // ৩. স্পিচ রিকগনিশন
@@ -204,7 +209,7 @@ const SpeechRecognition =
 let recognition = null;
 
 if (!SpeechRecognition) {
-  message.innerText = "আপনার ব্রাউজারে Speech Recognition সাপোর্ট নেই। Chrome ব্যবহার করুন।";
+  message.innerText = "আপনার ব্রাউজারে Speech Recognition সাপোর্ট নেই। Google Chrome ব্যবহার করুন।";
   button.disabled = true;
 } else {
 
@@ -226,7 +231,6 @@ if (!SpeechRecognition) {
   };
 
   recognition.onerror = function(event){
-    console.log("Speech error:", event.error);
     button.innerText = "🎙️ কথা বলুন";
     button.classList.remove("listening");
     statusText.innerText = "AERIS ONLINE";
@@ -244,20 +248,27 @@ if (!SpeechRecognition) {
   };
 }
 
+// ৪. বাটন ক্লিক করলেই মোবাইলের অডিও ইঞ্জিন আনলক করার ফিক্স
 button.addEventListener("click", function(){
   if(!recognition) return;
+
+  // অডিও পারমিশন রেজ্যুম
+  if (synth && synth.speaking) {
+    synth.cancel();
+  }
+  
+  // একটি খালি ডামি অডিও প্লে করে স্পিকার অ্যাক্টিভ করা
+  let dummy = new SpeechSynthesisUtterance("");
+  synth.speak(dummy);
+
   try{
-    // মোবাইলের অডিও পারমিশন এনাবল করার জন্য ট্রিক
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.resume();
-    }
     recognition.start();
   }catch(error){
     console.log(error);
   }
 });
 
-// ৪. নমনীয় উত্তর লজিক (Flexible Matching)
+// ৫. উত্তর লজিক
 function reply(text){
   let answer = "";
 
@@ -271,7 +282,7 @@ function reply(text){
     answer = "আমার নাম এরিস।";
   }
   else if(text.includes("কে তুমি") || text.includes("তুমি কে")){
-    answer = "আমি এরিস, আপনার নিজস্ব এআই সহকারী।";
+    answer = "আমি এরিস, আপনার এআই সহকারী।";
   }
   else if(text.includes("সময়") || text.includes("কয়টা") || text.includes("বাজে")){
     const now = new Date();
@@ -287,11 +298,15 @@ function reply(text){
     answer = "আপনাকেও অনেক ধন্যবাদ!";
   }
   else{
-    answer = "হ্যালো, আমি আপনার কথা শুনতে পেয়েছি। খুব শীঘ্রই আমি সব প্রশ্নের উত্তর দেওয়ার ক্ষমতা অর্জন করব।";
+    answer = "আমি আপনার কথা শুনতে পেয়েছি।";
   }
 
   message.innerText = "AERIS: " + answer;
-  speak(answer);
+  
+  // ১ সেকেন্ড বাদে কথা বলার ফাংশন চালু করা যেন রেসপন্স মসৃণ হয়
+  setTimeout(() => {
+    speak(answer);
+  }, 300);
 }
 
 </script>
