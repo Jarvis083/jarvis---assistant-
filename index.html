@@ -1,168 +1,233 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>JARVIS</title>
+<title>AERIS</title>
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+<style>
+*{
+    box-sizing:border-box;
+}
 
-        body {
-            margin: 0;
-            min-height: 100vh;
-            background: #05080d;
-            color: #ffffff;
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+body{
+    margin:0;
+    min-height:100vh;
+    background:#05080d;
+    color:#fff;
+    font-family:Arial,sans-serif;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
 
-        .jarvis {
-            width: 100%;
-            max-width: 500px;
-            min-height: 100vh;
-            padding: 30px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
+.aeris{
+    width:100%;
+    max-width:500px;
+    min-height:100vh;
+    padding:30px 20px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+}
 
-        h1 {
-            margin: 0;
-            font-size: 42px;
-            letter-spacing: 8px;
-        }
+h1{
+    margin:0;
+    font-size:44px;
+    letter-spacing:8px;
+    color:#00d9ff;
+    text-shadow:0 0 20px #00d9ff;
+}
 
-        .status {
-            margin-top: 10px;
-            color: #00d9ff;
-            font-size: 14px;
-            letter-spacing: 2px;
-        }
+.status{
+    margin-top:12px;
+    color:#00d9ff;
+    font-size:14px;
+    letter-spacing:2px;
+}
 
-        .core {
-            width: 210px;
-            height: 210px;
-            margin: 50px 0;
-            border-radius: 50%;
-            border: 2px solid #00d9ff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow:
-                0 0 20px #00d9ff,
-                0 0 60px rgba(0, 217, 255, 0.4);
-            animation: pulse 2s infinite;
-        }
+.core{
+    width:210px;
+    height:210px;
+    margin:50px 0;
+    border-radius:50%;
+    border:2px solid #00d9ff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:
+        0 0 20px #00d9ff,
+        0 0 60px rgba(0,217,255,.4);
+    animation:pulse 2s infinite;
+}
 
-        .core-inner {
-            width: 130px;
-            height: 130px;
-            border-radius: 50%;
-            border: 2px solid #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #00d9ff;
-            font-size: 18px;
-        }
+.core-inner{
+    width:130px;
+    height:130px;
+    border-radius:50%;
+    border:2px solid #fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#00d9ff;
+    font-size:18px;
+    letter-spacing:2px;
+}
 
-        @keyframes pulse {
-            0%, 100% {
-                transform: scale(1);
-            }
+@keyframes pulse{
+    0%,100%{
+        transform:scale(1);
+    }
+    50%{
+        transform:scale(1.05);
+    }
+}
 
-            50% {
-                transform: scale(1.05);
-            }
-        }
+.message{
+    width:100%;
+    min-height:90px;
+    padding:18px;
+    border:1px solid #183746;
+    border-radius:12px;
+    background:#081018;
+    text-align:center;
+    color:#b8c7d1;
+    margin-bottom:20px;
+    line-height:1.6;
+}
 
-        .message {
-            width: 100%;
-            min-height: 80px;
-            padding: 15px;
-            border: 1px solid #183746;
-            border-radius: 12px;
-            background: #081018;
-            text-align: center;
-            color: #b8c7d1;
-            margin-bottom: 20px;
-        }
+button{
+    border:1px solid #00d9ff;
+    background:transparent;
+    color:#00d9ff;
+    padding:14px 30px;
+    border-radius:30px;
+    font-size:16px;
+    cursor:pointer;
+}
 
-        button {
-            border: 1px solid #00d9ff;
-            background: transparent;
-            color: #00d9ff;
-            padding: 14px 30px;
-            border-radius: 30px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        button:active {
-            background: #00d9ff;
-            color: #000;
-        }
-    </style>
+button:active{
+    background:#00d9ff;
+    color:#000;
+}
+</style>
 </head>
 
 <body>
 
-<div class="jarvis">
+<div class="aeris">
 
-    <h1>JARVIS</h1>
+    <h1>AERIS</h1>
 
     <div class="status" id="status">
-        SYSTEM ONLINE
+        AERIS ONLINE
     </div>
 
     <div class="core">
-        <div class="core-inner">
-            READY
+        <div class="core-inner" id="coreText">
+            AERIS
         </div>
     </div>
 
     <div class="message" id="message">
-        Hello. I am your personal AI assistant.
+        বাংলায় কথা বলুন...
     </div>
 
-    <button onclick="speak()">
-        TALK TO JARVIS
+    <button onclick="listen()">
+        🎙️ কথা বলুন
     </button>
 
 </div>
 
 <script>
 
-function speak() {
+const SpeechRecognition =
+window.SpeechRecognition ||
+window.webkitSpeechRecognition;
 
-    const message =
-        "Hello. I am JARVIS. How can I assist you?";
+let recognition;
+
+function listen(){
+
+    if(!SpeechRecognition){
+
+        document.getElementById("message").innerText =
+        "এই ব্রাউজারে Speech Recognition নেই।";
+
+        return;
+    }
+
+    recognition = new SpeechRecognition();
+
+    recognition.lang = "bn-BD";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.start();
 
     document.getElementById("status").innerText =
-        "SPEAKING...";
+    "AERIS শুনছে...";
 
-    document.getElementById("message").innerText =
-        message;
+    document.getElementById("coreText").innerText =
+    "LISTEN";
 
-    const voice = new SpeechSynthesisUtterance(message);
+    recognition.onresult = function(event){
 
-    voice.lang = "en-US";
-    voice.rate = 0.9;
-    voice.pitch = 0.8;
+        const text =
+        event.results[0][0].transcript;
 
-    voice.onend = function () {
+        let reply;
+
+        if(
+            text.includes("হ্যালো") ||
+            text.includes("হাই")
+        ){
+
+            reply =
+            "হ্যালো। আমি এরিস। আপনাকে কীভাবে সাহায্য করতে পারি?";
+
+        }else{
+
+            reply =
+            "আপনি বলেছেন: " + text;
+        }
+
+        document.getElementById("message").innerText =
+        reply;
+
         document.getElementById("status").innerText =
-            "SYSTEM ONLINE";
+        "AERIS বুঝেছে";
+
+        document.getElementById("coreText").innerText =
+        "OK";
     };
 
-    speechSynthesis.speak(voice);
+    recognition.onerror = function(event){
+
+        document.getElementById("status").innerText =
+        "AERIS ERROR";
+
+        document.getElementById("message").innerText =
+        "সমস্যা: " + event.error;
+
+        document.getElementById("coreText").innerText =
+        "ERROR";
+    };
+
+    recognition.onend = function(){
+
+        setTimeout(function(){
+
+            document.getElementById("status").innerText =
+            "AERIS ONLINE";
+
+            document.getElementById("coreText").innerText =
+            "AERIS";
+
+        },1000);
+    };
 }
 
 </script>
