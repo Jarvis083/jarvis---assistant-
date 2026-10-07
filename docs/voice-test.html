@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AERIS Voice Test</title>
+</head>
+
+<body>
+
+<h2>AERIS Voice Test</h2>
+
+<button onclick="testVoice()">🔊 বাংলা ভয়েস পরীক্ষা</button>
+
+<p id="result">Voice পরীক্ষা করা হয়নি।</p>
+
+<script>
+
+function testVoice(){
+
+    const result = document.getElementById("result");
+
+    if(!("speechSynthesis" in window)){
+        result.innerText =
+        "এই ব্রাউজারে Speech Synthesis নেই।";
+        return;
+    }
+
+    const voices = speechSynthesis.getVoices();
+
+    const banglaVoices = voices.filter(function(voice){
+        return voice.lang.toLowerCase().startsWith("bn");
+    });
+
+    if(banglaVoices.length === 0){
+
+        result.innerText =
+        "বাংলা Voice পাওয়া যায়নি।";
+
+        return;
+    }
+
+    const voice = banglaVoices[0];
+
+    const text =
+    "হ্যালো। আমি এরিস। এখন আমি বাংলায় কথা বলছি।";
+
+    const utterance =
+    new SpeechSynthesisUtterance(text);
+
+    utterance.voice = voice;
+    utterance.lang = voice.lang;
+    utterance.rate = 0.9;
+    utterance.pitch = 1.1;
+    utterance.volume = 1;
+
+    result.innerText =
+    "Voice: " + voice.name +
+    " (" + voice.lang + ")";
+
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utterance);
+}
+
+speechSynthesis.onvoiceschanged = function(){
+    speechSynthesis.getVoices();
+};
+
+</script>
+
+</body>
+</html>
