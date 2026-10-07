@@ -10,99 +10,106 @@
 <style>
 
 *{
-box-sizing:border-box;
+    box-sizing:border-box;
 }
 
 body{
-margin:0;
-min-height:100vh;
-background:#05080d;
-color:white;
-font-family:Arial,sans-serif;
-display:flex;
-align-items:center;
-justify-content:center;
+    margin:0;
+    min-height:100vh;
+    background:#05080d;
+    color:white;
+    font-family:Arial,sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
 }
 
 .app{
-width:90%;
-max-width:500px;
-text-align:center;
+    width:90%;
+    max-width:500px;
+    text-align:center;
 }
 
 h1{
-font-size:42px;
-letter-spacing:7px;
-color:#00d9ff;
-margin:0;
-text-shadow:0 0 20px #00d9ff;
+    margin:0;
+    font-size:44px;
+    letter-spacing:8px;
+    color:#00d9ff;
+    text-shadow:0 0 20px #00d9ff;
 }
 
 .subtitle{
-margin-top:8px;
-color:#9fb4c0;
+    margin-top:10px;
+    color:#9bb0bd;
+    letter-spacing:2px;
 }
 
 .core{
-width:180px;
-height:180px;
-margin:40px auto;
-border:2px solid #00d9ff;
-border-radius:50%;
-display:flex;
-align-items:center;
-justify-content:center;
-color:#00d9ff;
-box-shadow:
-0 0 20px #00d9ff,
-0 0 60px rgba(0,217,255,.35);
-animation:pulse 2s infinite;
+    width:190px;
+    height:190px;
+    margin:45px auto;
+    border:2px solid #00d9ff;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#00d9ff;
+    font-size:24px;
+    letter-spacing:4px;
+    box-shadow:
+        0 0 20px #00d9ff,
+        0 0 60px rgba(0,217,255,.35);
+    animation:pulse 2s infinite;
 }
 
 @keyframes pulse{
 
-0%,100%{
-transform:scale(1);
+    0%,100%{
+        transform:scale(1);
+    }
+
+    50%{
+        transform:scale(1.05);
+    }
+
 }
 
-50%{
-transform:scale(1.05);
-}
-
-}
-
-textarea{
-width:100%;
-height:120px;
-padding:15px;
-border-radius:15px;
-border:1px solid #00d9ff;
-background:#081018;
-color:white;
-font-size:18px;
-outline:none;
-resize:none;
+.message{
+    width:100%;
+    min-height:100px;
+    padding:20px;
+    border:1px solid #183746;
+    border-radius:15px;
+    background:#081018;
+    color:#d7e3e9;
+    font-size:18px;
+    line-height:1.6;
 }
 
 button{
-margin-top:20px;
-padding:15px 35px;
-border-radius:30px;
-border:1px solid #00d9ff;
-background:transparent;
-color:#00d9ff;
-font-size:17px;
+    margin-top:22px;
+    padding:15px 35px;
+    border:1px solid #00d9ff;
+    border-radius:30px;
+    background:transparent;
+    color:#00d9ff;
+    font-size:17px;
+}
+
+button:active{
+    background:#00d9ff;
+    color:#000;
 }
 
 button:disabled{
-opacity:.5;
+    opacity:.5;
 }
 
 #status{
-margin-top:20px;
-color:#00d9ff;
-font-size:14px;
-letter-spacing:2px;
+    margin-top:20px;
+    color:#00d9ff;
+    font-size:14px;
+    letter-spacing:2px;
 }
 
 </style>
@@ -123,12 +130,12 @@ letter-spacing:2px;
 AERIS
 </div>
 
-<textarea id="text">হ্যালো। আমি এরিস। আপনাকে কীভাবে সাহায্য করতে পারি?</textarea>
+<div class="message" id="message">
+হ্যালো। আমি এরিস। আপনাকে কীভাবে সাহায্য করতে পারি?
+</div>
 
-<br>
-
-<button id="speak">
-🔊 কথা বলুন
+<button id="speakButton">
+🔊 এরিস কথা বলুন
 </button>
 
 <div id="status">
@@ -137,87 +144,92 @@ READY
 
 </div>
 
+
 <script type="module">
 
 import { pipeline }
-from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
+from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.0";
+
 
 const button =
-document.getElementById("speak");
+document.getElementById("speakButton");
 
-const text =
-document.getElementById("text");
+const message =
+document.getElementById("message");
 
 const status =
 document.getElementById("status");
 
-let speaker = null;
 
-button.onclick = async function(){
+let synthesizer = null;
 
-try{
 
-button.disabled = true;
+button.addEventListener("click", async function(){
 
-status.innerText =
-"VOICE MODEL LOADING...";
+    try{
 
-if(!speaker){
+        button.disabled = true;
 
-speaker = await pipeline(
-"text-to-speech",
-"Xenova/mms-tts-ben",
-{
-device:"wasm"
-}
-);
+        status.innerText =
+        "VOICE MODEL LOADING...";
 
-}
 
-status.innerText =
-"এরিস কথা বলছে...";
+        if(!synthesizer){
 
-const result =
-await speaker(text.value);
+            synthesizer =
+            await pipeline(
+                "text-to-audio",
+                "naklitechie/mms-tts-bn-ONNX",
+                {
+                    dtype:"q8"
+                }
+            );
 
-const audio =
-new Audio();
+        }
 
-audio.src =
-URL.createObjectURL(
-new Blob(
-[
-new Float32Array(result.audio)
-],
-{
-type:"audio/wav"
-}
-)
-);
 
-audio.play();
+        status.innerText =
+        "এরিস কথা বলছে...";
 
-audio.onended = function(){
 
-status.innerText =
-"READY";
+        const output =
+        await synthesizer(
+            message.innerText
+        );
 
-button.disabled = false;
 
-};
+        const audio =
+        new Audio(
+            output.toBlob()
+        );
 
-}catch(error){
 
-console.log(error);
+        audio.onended =
+        function(){
 
-status.innerText =
-"VOICE ERROR";
+            status.innerText =
+            "READY";
 
-button.disabled = false;
+            button.disabled = false;
 
-}
+        };
 
-};
+
+        await audio.play();
+
+
+    }catch(error){
+
+        console.error(error);
+
+        status.innerText =
+        "VOICE ERROR";
+
+        button.disabled = false;
+
+    }
+
+});
 
 </script>
 
