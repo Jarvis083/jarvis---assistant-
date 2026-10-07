@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>AERIS - AI Voice Assistant</title>
+<title>AERIS - AI Assistant</title>
 
 <style>
 *{
@@ -102,7 +101,6 @@ button:active{
   color:white;
 }
 
-/* AERIS যখন কথা বলবে তখনকার অ্যানিমেশন */
 .speaking {
   animation: pulse 1.2s infinite ease-in-out;
   border-color: #00ffaa;
@@ -150,16 +148,34 @@ const message = document.getElementById("message");
 const statusText = document.getElementById("status");
 const circle = document.getElementById("circle");
 
-// ১. ভয়েস রেসপন্স (Text-to-Speech)
+// ১. ভয়েস ইঞ্জিন লোড করা
+let voices = [];
+function loadVoices() {
+  if ('speechSynthesis' in window) {
+    voices = window.speechSynthesis.getVoices();
+  }
+}
+loadVoices();
+if ('speechSynthesis' in window && window.speechSynthesis.onvoiceschanged !== undefined) {
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+// ২. উন্নত Text-to-Speech (TTS) ফাংশন
 function speak(text) {
   if (!('speechSynthesis' in window)) return;
 
-  // আগের থেকে কোনো কথা বলতে থাকলে তা বন্ধ করা
-  window.speechSynthesis.cancel();
+  window.speechSynthesis.cancel(); // আগের কথা বন্ধ করা
 
   const utterance = new SpeechSynthesisUtterance(text);
+  
+  // বাংলা ভয়েস খোঁজা
+  const bnVoice = voices.find(voice => voice.lang.includes('bn') || voice.lang.includes('BD'));
+  if (bnVoice) {
+    utterance.voice = bnVoice;
+  }
+  
   utterance.lang = "bn-BD"; 
-  utterance.rate = 1.0; 
+  utterance.rate = 0.9; 
 
   utterance.onstart = function() {
     circle.classList.add("speaking");
@@ -171,10 +187,16 @@ function speak(text) {
     statusText.innerText = "AERIS ONLINE";
   };
 
+  utterance.onerror = function(e) {
+    console.log("TTS Error:", e);
+    circle.classList.remove("speaking");
+    statusText.innerText = "AERIS ONLINE";
+  };
+
   window.speechSynthesis.speak(utterance);
 }
 
-// ২. স্পিচ রিকগনিশন (Speech-to-Text)
+// ৩. স্পিচ রিকগনিশন
 const SpeechRecognition =
   window.SpeechRecognition ||
   window.webkitSpeechRecognition;
@@ -182,7 +204,7 @@ const SpeechRecognition =
 let recognition = null;
 
 if (!SpeechRecognition) {
-  message.innerText = "আপনার ব্রাউজারে Speech Recognition সাপোর্ট নেই।";
+  message.innerText = "আপনার ব্রাউজারে Speech Recognition সাপোর্ট নেই। Chrome ব্যবহার করুন।";
   button.disabled = true;
 } else {
 
@@ -212,7 +234,7 @@ if (!SpeechRecognition) {
     if(event.error === "not-allowed"){
       message.innerText = "মাইক্রোফোন অনুমতি দেওয়া হয়নি।";
     } else {
-      message.innerText = "আবার চেষ্টা করুন।";
+      message.innerText = "কথা বোঝা যায়নি, আবার চেষ্টা করুন।";
     }
   };
 
@@ -225,48 +247,51 @@ if (!SpeechRecognition) {
 button.addEventListener("click", function(){
   if(!recognition) return;
   try{
+    // মোবাইলের অডিও পারমিশন এনাবল করার জন্য ট্রিক
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.resume();
+    }
     recognition.start();
   }catch(error){
     console.log(error);
   }
 });
 
-// ৩. ইন্টেলিজেন্ট লজিক হ্যান্ডলার
+// ৪. নমনীয় উত্তর লজিক (Flexible Matching)
 function reply(text){
   let answer = "";
-  const lowerText = text.toLowerCase();
 
-  if(lowerText.includes("হ্যালো") || lowerText.includes("হাই")){
+  if(text.includes("হ্যালো") || text.includes("হাই") || text.includes("হেলো")){
     answer = "হ্যালো! আমি এরিস। আপনাকে কীভাবে সাহায্য করতে পারি?";
   }
-  else if(lowerText.includes("কেমন আছো") || lowerText.includes("কেমন আছেন")){
-    answer = "আমি ভালো আছি। আপনার সাথে কথা বলতে প্রস্তুত।";
+  else if(text.includes("কেমন")){
+    answer = "আমি ভালো আছি। আপনার দিনটি কেমন যাচ্ছে?";
   }
-  else if(lowerText.includes("তোমার নাম") || lowerText.includes("আপনার নাম") || lowerText.includes("নাম কি")){
+  else if(text.includes("নাম")){
     answer = "আমার নাম এরিস।";
   }
-  else if(lowerText.includes("কে তুমি") || lowerText.includes("তুমি কে")){
-    answer = "আমি এরিস, আপনার এআই সহকারী।";
+  else if(text.includes("কে তুমি") || text.includes("তুমি কে")){
+    answer = "আমি এরিস, আপনার নিজস্ব এআই সহকারী।";
   }
-  else if(lowerText.includes("সময় কত") || lowerText.includes("কয়টা বাজে")){
+  else if(text.includes("সময়") || text.includes("কয়টা") || text.includes("বাজে")){
     const now = new Date();
     const timeString = now.toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' });
     answer = "এখন সময় " + timeString;
   }
-  else if(lowerText.includes("তারিখ") || lowerText.includes("আজকে কত তারিখ")){
+  else if(text.includes("তারিখ") || text.includes("দিন")){
     const now = new Date();
     const dateString = now.toLocaleDateString('bn-BD', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     answer = "আজকে " + dateString;
   }
-  else if(lowerText.includes("ধন্যবাদ")){
-    answer = "আপনাকেও অসংখ্য ধন্যবাদ!";
+  else if(text.includes("ধন্যবাদ")){
+    answer = "আপনাকেও অনেক ধন্যবাদ!";
   }
   else{
-    answer = "আমি আপনার কথা শুনতে পেয়েছি, কিন্তু এটি করার নির্দেশনা আমার কোডে এখনো দেওয়া হয়নি।";
+    answer = "হ্যালো, আমি আপনার কথা শুনতে পেয়েছি। খুব শীঘ্রই আমি সব প্রশ্নের উত্তর দেওয়ার ক্ষমতা অর্জন করব।";
   }
 
   message.innerText = "AERIS: " + answer;
-  speak(answer); // উত্তর মুখে বলবে
+  speak(answer);
 }
 
 </script>
