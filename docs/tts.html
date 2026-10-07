@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JARVIS Bengali TTS</title>
+</head>
+
+<body>
+
+<h2>JARVIS Bengali Voice Test</h2>
+
+<textarea id="text" rows="5" cols="35">হ্যালো, আমি জার্ভিস।</textarea>
+
+<br><br>
+
+<button onclick="speak()">🔊 কথা বলুন</button>
+
+<script type="module">
+
+import { pipeline }
+from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2";
+
+let tts = null;
+
+async function speak(){
+
+if(!tts){
+
+alert("প্রথমবার Bengali voice model লোড হচ্ছে। একটু অপেক্ষা করো।");
+
+tts = await pipeline(
+"text-to-speech",
+"Xenova/mms-tts-ben",
+{dtype:"q8"}
+);
+
+}
+
+const text =
+document.getElementById("text").value;
+
+const output = await tts(text);
+
+const audio =
+new Audio(
+URL.createObjectURL(
+new Blob(
+[encodeWav(output.audio, output.sampling_rate)],
+{type:"audio/wav"}
+)
+)
+);
+
+audio.play();
+
+}
+
+function encodeWav(samples, sampleRate){
+
+const buffer =
+new ArrayBuffer(44 + samples.length * 2);
+
+const view =
+new DataView(buffer);
+
+function writeString(offset,string){
+
+for(let i=0;i<string.length;i++){
+view.setUint8(offset+i,string.charCodeAt(i));
+}
+
+}
+
+writeString(0,"RIFF");
+
+view.setUint32(4,36 + samples.length * 2,true);
+
+writeString(8,"WAVE");
+
+writeString(12,"fmt ");
+
+view.setUint32(16,16,true);
+
+view.setUint16(20,1,true);
+
+view.setUint16(22,1,true);
+
+view.setUint32(24,sampleRate,true);
+
+view.setUint32(28,sampleRate*2,true);
+
+view.setUint16(32,2,true);
+
+view.setUint16(34,16,true);
+
+writeString(36,"data");
+
+view.setUint32(40,samples.length*2,true);
+
+let offset=44;
+
+for(let i=0;i<samples.length;i++){
+
+let s=Math.max(-1,Math.min(1,samples[i]));
+
+view.setInt16(
+offset,
+s < 0 ? s * 0x8000 : s * 0x7fff,
+true
+);
+
+offset+=2;
+
+}
+
+return buffer;
+
+}
+
+</script>
+
+</body>
+</html>
