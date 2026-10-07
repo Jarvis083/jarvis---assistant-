@@ -138,14 +138,29 @@ let recognition;
 
 function speak(text){
 
+const voices = speechSynthesis.getVoices();
+
+const maleVoice = voices.find(function(voice){
+return voice.lang.startsWith("en") &&
+(
+voice.name.toLowerCase().includes("male") ||
+voice.name.toLowerCase().includes("david") ||
+voice.name.toLowerCase().includes("mark") ||
+voice.name.toLowerCase().includes("daniel")
+);
+});
+
 const voice = new SpeechSynthesisUtterance(text);
 
 voice.lang = "en-US";
 voice.rate = 0.9;
-voice.pitch = 0.8;
+voice.pitch = 0.7;
+
+if(maleVoice){
+voice.voice = maleVoice;
+}
 
 speechSynthesis.cancel();
-
 speechSynthesis.speak(voice);
 
 }
