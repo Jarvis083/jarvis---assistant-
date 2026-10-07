@@ -1,117 +1,139 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>JARVIS বাংলা Voice</title>
+<title>AERIS</title>
 
 <style>
+
 *{
-    box-sizing:border-box;
+box-sizing:border-box;
 }
 
 body{
-    margin:0;
-    min-height:100vh;
-    background:#05080d;
-    color:white;
-    font-family:Arial,sans-serif;
-    display:flex;
-    justify-content:center;
-    align-items:center;
+margin:0;
+min-height:100vh;
+background:#05080d;
+color:white;
+font-family:Arial,sans-serif;
+display:flex;
+align-items:center;
+justify-content:center;
 }
 
-.container{
-    width:90%;
-    max-width:500px;
-    text-align:center;
+.app{
+width:90%;
+max-width:500px;
+text-align:center;
 }
 
 h1{
-    color:#00d9ff;
-    letter-spacing:5px;
-    margin-bottom:8px;
+font-size:42px;
+letter-spacing:7px;
+color:#00d9ff;
+margin:0;
+text-shadow:0 0 20px #00d9ff;
 }
 
 .subtitle{
-    color:#8ca5b5;
-    margin-bottom:30px;
+margin-top:8px;
+color:#9fb4c0;
+}
+
+.core{
+width:180px;
+height:180px;
+margin:40px auto;
+border:2px solid #00d9ff;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+color:#00d9ff;
+box-shadow:
+0 0 20px #00d9ff,
+0 0 60px rgba(0,217,255,.35);
+animation:pulse 2s infinite;
+}
+
+@keyframes pulse{
+
+0%,100%{
+transform:scale(1);
+}
+
+50%{
+transform:scale(1.05);
+}
+
 }
 
 textarea{
-    width:100%;
-    height:130px;
-    padding:15px;
-    border-radius:15px;
-    border:1px solid #00d9ff;
-    background:#081018;
-    color:white;
-    font-size:18px;
-    resize:none;
-    outline:none;
+width:100%;
+height:120px;
+padding:15px;
+border-radius:15px;
+border:1px solid #00d9ff;
+background:#081018;
+color:white;
+font-size:18px;
+outline:none;
+resize:none;
 }
 
 button{
-    margin-top:20px;
-    padding:15px 35px;
-    border:1px solid #00d9ff;
-    border-radius:30px;
-    background:transparent;
-    color:#00d9ff;
-    font-size:17px;
+margin-top:20px;
+padding:15px 35px;
+border-radius:30px;
+border:1px solid #00d9ff;
+background:transparent;
+color:#00d9ff;
+font-size:17px;
 }
 
 button:disabled{
-    opacity:.5;
+opacity:.5;
 }
 
 #status{
-    margin-top:25px;
-    color:#00d9ff;
-    font-size:14px;
+margin-top:20px;
+color:#00d9ff;
+font-size:14px;
+letter-spacing:2px;
 }
 
-.circle{
-    width:110px;
-    height:110px;
-    margin:0 auto 30px;
-    border-radius:50%;
-    border:2px solid #00d9ff;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    color:#00d9ff;
-    box-shadow:0 0 25px rgba(0,217,255,.5);
-}
 </style>
+
 </head>
 
 <body>
 
-<div class="container">
+<div class="app">
 
-    <h1>JARVIS</h1>
+<h1>AERIS</h1>
 
-    <div class="subtitle">
-        বাংলা AI VOICE
-    </div>
+<div class="subtitle">
+বাংলা AI ASSISTANT
+</div>
 
-    <div class="circle">
-        VOICE
-    </div>
+<div class="core">
+AERIS
+</div>
 
-    <textarea id="text">হ্যালো, আমি জার্ভিস। আপনাকে কীভাবে সাহায্য করতে পারি?</textarea>
+<textarea id="text">হ্যালো। আমি এরিস। আপনাকে কীভাবে সাহায্য করতে পারি?</textarea>
 
-    <br>
+<br>
 
-    <button id="speakButton">
-        🔊 কথা বলুন
-    </button>
+<button id="speak">
+🔊 কথা বলুন
+</button>
 
-    <div id="status">
-        READY
-    </div>
+<div id="status">
+READY
+</div>
 
 </div>
 
@@ -121,79 +143,81 @@ import { pipeline }
 from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
 
 const button =
-document.getElementById("speakButton");
+document.getElementById("speak");
 
-const textBox =
+const text =
 document.getElementById("text");
 
 const status =
 document.getElementById("status");
 
-let synthesizer = null;
+let speaker = null;
 
-button.addEventListener("click", async () => {
+button.onclick = async function(){
 
-    try {
+try{
 
-        button.disabled = true;
+button.disabled = true;
 
-        status.innerText =
-        "VOICE MODEL LOADING...";
+status.innerText =
+"VOICE MODEL LOADING...";
 
-        if (!synthesizer) {
+if(!speaker){
 
-            synthesizer = await pipeline(
-                "text-to-speech",
-                "Xenova/mms-tts-ben"
-            );
+speaker = await pipeline(
+"text-to-speech",
+"Xenova/mms-tts-ben",
+{
+device:"wasm"
+}
+);
 
-        }
+}
 
-        status.innerText =
-        "VOICE GENERATING...";
+status.innerText =
+"এরিস কথা বলছে...";
 
-        const output =
-        await synthesizer(textBox.value);
+const result =
+await speaker(text.value);
 
-        const audio =
-        new Audio(
-            URL.createObjectURL(
-                output.toBlob()
-            )
-        );
+const audio =
+new Audio();
 
-        audio.onended = () => {
+audio.src =
+URL.createObjectURL(
+new Blob(
+[
+new Float32Array(result.audio)
+],
+{
+type:"audio/wav"
+}
+)
+);
 
-            status.innerText =
-            "READY";
+audio.play();
 
-            button.disabled = false;
+audio.onended = function(){
 
-        };
+status.innerText =
+"READY";
 
-        audio.onerror = () => {
+button.disabled = false;
 
-            status.innerText =
-            "AUDIO ERROR";
+};
 
-            button.disabled = false;
+}catch(error){
 
-        };
+console.log(error);
 
-        await audio.play();
+status.innerText =
+"VOICE ERROR";
 
-    } catch(error) {
+button.disabled = false;
 
-        console.error(error);
+}
 
-        status.innerText =
-        "ERROR: " + error.message;
-
-        button.disabled = false;
-
-    }
-
-});
+};
 
 </script>
 
