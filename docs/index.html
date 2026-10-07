@@ -48,11 +48,9 @@ h1{
   margin:auto;
   border-radius:50%;
   border:2px solid #00eaff;
-  box-shadow:
-    0 0 20px #00eaff,
-    0 0 60px rgba(0,234,255,.35),
-    inset 0 0 40px rgba(0,234,255,.2);
-
+  box-shadow:0 0 20px #00eaff,
+             0 0 60px rgba(0,234,255,.35),
+             inset 0 0 40px rgba(0,234,255,.2);
   display:flex;
   justify-content:center;
   align-items:center;
@@ -69,7 +67,6 @@ h1{
   align-items:center;
   font-size:25px;
   letter-spacing:4px;
-  box-shadow:0 0 30px rgba(0,234,255,.4);
 }
 
 .message{
@@ -88,7 +85,6 @@ button{
   color:#001015;
   font-size:17px;
   font-weight:bold;
-  cursor:pointer;
 }
 
 button:active{
@@ -106,125 +102,296 @@ button:active{
 
 <div class="container">
 
-  <h1>AERIS</h1>
+<h1>AERIS</h1>
 
-  <div class="status" id="status">
-    AERIS ONLINE
+<div class="status" id="status">
+AERIS ONLINE
+</div>
+
+<div class="circle">
+  <div class="inner">
+    AERIS
   </div>
+</div>
 
-  <div class="circle">
-    <div class="inner" id="core">
-      AERIS
-    </div>
-  </div>
+<div class="message" id="message">
+বাংলায় কথা বলুন...
+</div>
 
-  <div class="message" id="message">
-    বাংলায় কথা বলুন...
-  </div>
-
-  <button id="talkButton">
-    🎙️ কথা বলুন
-  </button>
+<button id="talkButton">
+🎙️ কথা বলুন
+</button>
 
 </div>
 
-<script>
+<script type="module">
 
-const button = document.getElementById("talkButton");
-const message = document.getElementById("message");
-const statusText = document.getElementById("status");
+import { pipeline } from
+"https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2";
 
-const SpeechRecognition =
-  window.SpeechRecognition ||
-  window.webkitSpeechRecognition;
+const button =
+document.getElementById("talkButton");
+
+const message =
+document.getElementById("message");
+
+const statusText =
+document.getElementById("status");
 
 let recognition = null;
+let synthesizer = null;
+let loadingTTS = false;
 
-if (!SpeechRecognition) {
+
+/* =========================
+   BENGALI TTS
+========================= */
+
+async function loadVoice(){
+
+  if(synthesizer || loadingTTS){
+    return;
+  }
+
+  loadingTTS = true;
+
+  statusText.innerText =
+  "AERIS VOICE LOADING...";
 
   message.innerText =
-    "আপনার ব্রাউজারে Speech Recognition সাপোর্ট নেই।";
+  "বাংলা ভয়েস প্রস্তুত হচ্ছে... প্রথমবার কিছুটা সময় লাগতে পারে।";
+
+  try{
+
+    synthesizer = await pipeline(
+      "text-to-audio",
+      "naklitechie/mms-tts-bn-ONNX"
+    );
+
+    statusText.innerText =
+    "AERIS ONLINE";
+
+    message.innerText =
+    "বাংলা ভয়েস প্রস্তুত।";
+
+  }catch(error){
+
+    console.error(error);
+
+    synthesizer = null;
+
+    statusText.innerText =
+    "VOICE ERROR";
+
+    message.innerText =
+    "বাংলা ভয়েস লোড করা যায়নি।";
+
+  }
+
+  loadingTTS = false;
+}
+
+
+/* =========================
+   SPEAK
+========================= */
+
+async function speak(text){
+
+  try{
+
+    if(!synthesizer){
+
+      await loadVoice();
+
+    }
+
+    if(!synthesizer){
+      return;
+    }
+
+    statusText.innerText =
+    "AERIS SPEAKING...";
+
+    const output =
+    await synthesizer(text);
+
+    const audioBlob =
+    output.toBlob();
+
+    const audioURL =
+    URL.createObjectURL(audioBlob);
+
+    const audio =
+    new Audio(audioURL);
+
+    audio.onended = function(){
+
+      URL.revokeObjectURL(audioURL);
+
+      statusText.innerText =
+      "AERIS ONLINE";
+
+    };
+
+    await audio.play();
+
+  }catch(error){
+
+    console.error(error);
+
+    statusText.innerText =
+    "AERIS ONLINE";
+
+    message.innerText =
+    "উত্তর তৈরি হয়েছে, কিন্তু ভয়েস চালু করা যায়নি।";
+
+  }
+
+}
+
+
+/* =========================
+   SPEECH RECOGNITION
+========================= */
+
+const SpeechRecognition =
+window.SpeechRecognition ||
+window.webkitSpeechRecognition;
+
+if(!SpeechRecognition){
+
+  message.innerText =
+  "এই ব্রাউজারে Speech Recognition নেই।";
 
   button.disabled = true;
 
-} else {
+}else{
 
-  recognition = new SpeechRecognition();
+  recognition =
+  new SpeechRecognition();
 
-  recognition.lang = "bn-BD";
-  recognition.continuous = false;
-  recognition.interimResults = false;
+  recognition.lang =
+  "bn-BD";
+
+  recognition.continuous =
+  false;
+
+  recognition.interimResults =
+  false;
+
 
   recognition.onstart = function(){
 
-    button.innerText = "🔴 শুনছি...";
-    button.classList.add("listening");
+    button.innerText =
+    "🔴 শুনছি...";
 
-    statusText.innerText = "AERIS LISTENING";
+    button.classList.add(
+      "listening"
+    );
+
+    statusText.innerText =
+    "AERIS LISTENING";
 
   };
 
-  recognition.onresult = function(event){
+
+  recognition.onresult =
+  function(event){
 
     const text =
-      event.results[0][0].transcript.trim();
+    event.results[0][0].transcript.trim();
 
-    message.innerText = "আপনি: " + text;
+    message.innerText =
+    "আপনি: " + text;
 
     reply(text);
 
   };
 
-  recognition.onerror = function(event){
 
-    console.log("Speech error:", event.error);
+  recognition.onerror =
+  function(event){
 
-    button.innerText = "🎙️ কথা বলুন";
-    button.classList.remove("listening");
+    console.log(
+      "Recognition error:",
+      event.error
+    );
 
-    statusText.innerText = "AERIS ONLINE";
+    resetButton();
 
-    if(event.error === "not-allowed"){
+    if(
+      event.error ===
+      "not-allowed"
+    ){
 
       message.innerText =
-        "মাইক্রোফোন অনুমতি দেওয়া হয়নি।";
+      "মাইক্রোফোনের অনুমতি দিন।";
 
     }else{
 
       message.innerText =
-        "আবার চেষ্টা করুন।";
+      "আবার চেষ্টা করুন।";
 
     }
 
   };
 
-  recognition.onend = function(){
 
-    button.innerText = "🎙️ কথা বলুন";
-    button.classList.remove("listening");
+  recognition.onend =
+  function(){
 
-    statusText.innerText = "AERIS ONLINE";
+    resetButton();
 
   };
 
 }
 
-button.addEventListener("click", function(){
 
-  if(!recognition) return;
+/* =========================
+   BUTTON
+========================= */
 
-  try{
+button.addEventListener(
+  "click",
+  function(){
 
-    recognition.start();
+    if(!recognition){
+      return;
+    }
 
-  }catch(error){
+    try{
 
-    console.log(error);
+      recognition.start();
+
+    }catch(error){
+
+      console.log(error);
+
+    }
 
   }
+);
 
-});
 
+function resetButton(){
+
+  button.innerText =
+  "🎙️ কথা বলুন";
+
+  button.classList.remove(
+    "listening"
+  );
+
+  statusText.innerText =
+  "AERIS ONLINE";
+
+}
+
+
+/* =========================
+   AERIS REPLY
+========================= */
 
 function reply(text){
 
@@ -236,7 +403,7 @@ function reply(text){
   ){
 
     answer =
-      "হ্যালো! আমি এরিস। আপনাকে কীভাবে সাহায্য করতে পারি?";
+    "হ্যালো! আমি এরিস। আপনাকে কীভাবে সাহায্য করতে পারি?";
 
   }
 
@@ -246,7 +413,7 @@ function reply(text){
   ){
 
     answer =
-      "আমি ভালো আছি। আপনার সাথে কথা বলতে প্রস্তুত।";
+    "আমি ভালো আছি। আপনার সাথে কথা বলতে প্রস্তুত।";
 
   }
 
@@ -257,7 +424,7 @@ function reply(text){
   ){
 
     answer =
-      "আমার নাম এরিস।";
+    "আমার নাম এরিস।";
 
   }
 
@@ -267,7 +434,7 @@ function reply(text){
   ){
 
     answer =
-      "আমি এরিস, আপনার AI সহকারী।";
+    "আমি এরিস, আপনার AI সহকারী।";
 
   }
 
@@ -276,18 +443,22 @@ function reply(text){
   ){
 
     answer =
-      "আপনাকেও ধন্যবাদ।";
+    "আপনাকেও ধন্যবাদ।";
 
   }
 
   else{
 
     answer =
-      "আমি আপনার কথা বুঝতে পেরেছি।";
+    "আমি আপনার কথা বুঝতে পেরেছি।";
 
   }
 
-  message.innerText = "AERIS: " + answer;
+
+  message.innerText =
+  "AERIS: " + answer;
+
+  speak(answer);
 
 }
 
