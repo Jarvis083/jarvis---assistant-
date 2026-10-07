@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>AERIS - AI Assistant</title>
 
 <style>
@@ -142,66 +141,69 @@ button:active{
 
 </div>
 
+<!-- হিডেন অডিও প্লেয়ার -->
+<audio id="ttsAudio" style="display:none;"></audio>
+
 <script>
 
 const button = document.getElementById("talkButton");
 const message = document.getElementById("message");
 const statusText = document.getElementById("status");
 const circle = document.getElementById("circle");
+const audioElement = document.getElementById("ttsAudio");
 
-// ১. ভয়েস প্রিপেয়ার এবং সাউন্ড অন করার ফিক্স
-let synth = window.speechSynthesis;
-let voices = [];
-
-function populateVoices() {
-  if(synth) {
-    voices = synth.getVoices();
-  }
-}
-
-populateVoices();
-if (synth && synth.onvoiceschanged !== undefined) {
-  synth.onvoiceschanged = populateVoices;
-}
-
-// ২. স্পিচ ফাংশন (গ্যারান্টিড ভয়েস আউটপুট)
+// ১. গুগল টিটিএস সার্ভার থেকে সরাসরি ভয়েস চালানোর ফাংশন
 function speak(text) {
-  if (!synth) return;
+  if (!text) return;
 
-  // আগের কথা বন্ধ করা
-  synth.cancel();
-
-  const utterance = new SpeechSynthesisUtterance(text);
+  // গুগল ট্রান্সলেট ফ্রি অডিও এপিআই ইউআরএল
+  const url = "https://translate.google.com/translate_tts?ie=UTF-8&q=" + encodeURIComponent(text) + "&tl=bn&client=tw-ob";
   
-  // বাংলা ভয়েস নির্বাচন করার চেষ্টা করা
-  let banglaVoice = voices.find(v => v.lang.includes('bn') || v.lang.includes('BD'));
-  if (banglaVoice) {
-    utterance.voice = banglaVoice;
-  }
+  audioElement.src = url;
 
-  utterance.lang = "bn-BD"; 
-  utterance.rate = 0.9; 
-  utterance.pitch = 1.0;
-
-  utterance.onstart = function() {
+  audioElement.onplay = function() {
     circle.classList.add("speaking");
     statusText.innerText = "AERIS SPEAKING";
   };
 
+  audioElement.onended = function() {
+    circle.classList.remove("speaking");
+    statusText.innerText = "AERIS ONLINE";
+  };
+
+  audioElement.onerror = function(e) {
+    console.log("Audio Error, Fallback to SpeechSynthesis:", e);
+    // অনলাইন অডিও ব্লক হলে ব্রাউজারের লোকাল ইঞ্জিনে ফলব্যাক
+    fallbackSpeak(text);
+  };
+
+  audioElement.play().catch(error => {
+    console.log("Auto-play error:", error);
+    fallbackSpeak(text);
+  });
+}
+
+// ২. ফলব্যাক হিসেবে ব্রাউজারের লোকাল ভয়েস
+function fallbackSpeak(text) {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "bn-BD";
+  
+  utterance.onstart = function() {
+    circle.classList.add("speaking");
+    statusText.innerText = "AERIS SPEAKING";
+  };
   utterance.onend = function() {
     circle.classList.remove("speaking");
     statusText.innerText = "AERIS ONLINE";
   };
 
-  utterance.onerror = function() {
-    circle.classList.remove("speaking");
-    statusText.innerText = "AERIS ONLINE";
-  };
-
-  synth.speak(utterance);
+  window.speechSynthesis.speak(utterance);
 }
 
-// ৩. স্পিচ রিকগনিশন
+// ৩. স্পিচ রিকগনিশন (Speech-To-Text)
 const SpeechRecognition =
   window.SpeechRecognition ||
   window.webkitSpeechRecognition;
@@ -209,7 +211,7 @@ const SpeechRecognition =
 let recognition = null;
 
 if (!SpeechRecognition) {
-  message.innerText = "আপনার ব্রাউজারে Speech Recognition সাপোর্ট নেই। Google Chrome ব্যবহার করুন।";
+  message.innerText = "আপনার ব্রাউজারে Speech Recognition সাপোর্ট নেই। Chrome ব্যবহার করুন।";
   button.disabled = true;
 } else {
 
@@ -248,18 +250,14 @@ if (!SpeechRecognition) {
   };
 }
 
-// ৪. বাটন ক্লিক করলেই মোবাইলের অডিও ইঞ্জিন আনলক করার ফিক্স
+// ৪. বাটনে ক্লিক করার সাথে সাথে মোবাইলের সাউন্ড পারমিশন আনলক করা
 button.addEventListener("click", function(){
   if(!recognition) return;
 
-  // অডিও পারমিশন রেজ্যুম
-  if (synth && synth.speaking) {
-    synth.cancel();
-  }
-  
-  // একটি খালি ডামি অডিও প্লে করে স্পিকার অ্যাক্টিভ করা
-  let dummy = new SpeechSynthesisUtterance("");
-  synth.speak(dummy);
+  // অডিও পারমিশন রেজ্যুম করা
+  audioElement.play().then(() => {
+    audioElement.pause();
+  }).catch(() => {});
 
   try{
     recognition.start();
@@ -268,7 +266,7 @@ button.addEventListener("click", function(){
   }
 });
 
-// ৫. উত্তর লজিক
+// ৫. রেসপন্স লজিক
 function reply(text){
   let answer = "";
 
@@ -302,11 +300,7 @@ function reply(text){
   }
 
   message.innerText = "AERIS: " + answer;
-  
-  // ১ সেকেন্ড বাদে কথা বলার ফাংশন চালু করা যেন রেসপন্স মসৃণ হয়
-  setTimeout(() => {
-    speak(answer);
-  }, 300);
+  speak(answer);
 }
 
 </script>
