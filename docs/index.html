@@ -59,48 +59,49 @@ button:active{ transform:scale(.96); }
   <button id="talkButton">🎙️ কথা বলুন</button>
 </div>
 
-<!-- অডিও প্লেয়ার যা অ্যান্ড্রয়েড ব্রাউজার ব্লক করতে পারে না -->
-<audio id="ttsAudio"></audio>
-
 <script>
 const button = document.getElementById("talkButton");
 const message = document.getElementById("message");
 const statusText = document.getElementById("status");
 const circle = document.getElementById("circle");
-const audioPlayer = document.getElementById("ttsAudio");
 
-// ১. গ্যারান্টিড অডিও সাউন্ড ফাংশন
+// ১. ফোনের সার্ভিস ব্যবহার করে বাংলা ভয়েস প্লে করা
 function speak(text) {
   if (!text) return;
 
-  // গুগল ট্রান্সলেট বাংলা টেক্সট-টু-স্পিচ লিংক
-  const audioUrl = "https://translate.google.com/translate_tts?ie=UTF-8&q=" + encodeURIComponent(text) + "&tl=bn&client=tw-ob";
-  
-  audioPlayer.src = audioUrl;
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel(); // আগের চলমান শব্দ বন্ধ করবে
 
-  circle.classList.add("speaking");
-  statusText.innerText = "AERIS SPEAKING";
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "bn-BD"; // বাংলা ভয়েস
+    utterance.rate = 0.9;     // কথা বলার গতি
 
-  audioPlayer.play().then(() => {
-    console.log("Playing audio successfully");
-  }).catch((err) => {
-    console.log("Audio play error:", err);
-    circle.classList.remove("speaking");
-    statusText.innerText = "AERIS ONLINE";
-  });
+    utterance.onstart = function() {
+      circle.classList.add("speaking");
+      statusText.innerText = "AERIS SPEAKING";
+    };
+
+    utterance.onend = function() {
+      circle.classList.remove("speaking");
+      statusText.innerText = "AERIS ONLINE";
+    };
+
+    utterance.onerror = function(e) {
+      console.log("TTS Error:", e);
+      circle.classList.remove("speaking");
+      statusText.innerText = "AERIS ONLINE";
+    };
+
+    window.speechSynthesis.speak(utterance);
+  }
 }
 
-audioPlayer.onended = function() {
-  circle.classList.remove("speaking");
-  statusText.innerText = "AERIS ONLINE";
-};
-
-// ২. স্পিচ রিকগনিশন
+// ২. বাংলা কথা শোনার সিস্টেম (Speech Recognition)
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
 
 if (!SpeechRecognition) {
-  message.innerText = "Chrome ব্রাউজার ব্যবহার করুন।";
+  message.innerText = "দয়া করে Google Chrome ব্রাউজার ব্যবহার করুন।";
   button.disabled = true;
 } else {
   recognition = new SpeechRecognition();
@@ -133,30 +134,41 @@ if (!SpeechRecognition) {
   };
 }
 
-// ৩. বাটনে চাপ দেওয়ার সাথে সাথে অডিও আনলক
+// ৩. বাটনে চাপ
 button.addEventListener("click", function(){
-  // ইউজার ক্লিকে অডিও পারমিশন দেওয়া
-  audioPlayer.play().catch(() => {});
-  
   if(recognition) {
     try { recognition.start(); } catch(e){}
   }
 });
 
-// ৪. রেসপন্স লজিক
+// ৪. বাংলা উত্তরের লজিক
 function reply(text){
   let answer = "";
 
-  if(text.includes("হ্যালো") || text.includes("হাই")){
+  if(text.includes("হ্যালো") || text.includes("হাই") || text.includes("হেলো")){
     answer = "হ্যালো! আমি এরিস। আপনাকে কীভাবে সাহায্য করতে পারি?";
-  } else if(text.includes("কেমন")){
+  } 
+  else if(text.includes("কেমন")){
     answer = "আমি ভালো আছি। আপনার দিনটি কেমন যাচ্ছে?";
-  } else if(text.includes("নাম")){
+  } 
+  else if(text.includes("নাম")){
     answer = "আমার নাম এরিস।";
-  } else if(text.includes("সময়") || text.includes("কয়টা")){
+  } 
+  else if(text.includes("কে তুমি") || text.includes("তুমি কে")){
+    answer = "আমি আপনার এআই সহকারী এরিস।";
+  } 
+  else if(text.includes("সময়") || text.includes("কয়টা") || text.includes("বাজে")){
     const now = new Date();
     answer = "এখন সময় " + now.toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' });
-  } else {
+  } 
+  else if(text.includes("তারিখ") || text.includes("দিন")){
+    const now = new Date();
+    answer = "আজ " + now.toLocaleDateString('bn-BD', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  } 
+  else if(text.includes("ধন্যবাদ")){
+    answer = "আপনাকেও অনেক ধন্যবাদ!";
+  } 
+  else {
     answer = "আমি আপনার কথা শুনতে পেয়েছি।";
   }
 
