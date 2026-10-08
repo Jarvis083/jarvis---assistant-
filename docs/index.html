@@ -113,39 +113,38 @@ button:active{ transform:scale(.96); }
     synth.speak(utterance);
   }
 
-  // Gemini API থেকে উত্তর আনার ফাংশন
+  // Gemini API থেকে উত্তর আনার ফিক্সড ফাংশন
   async function askGemini(userText) {
     message.innerText = "মফিজ চিন্তা করছে...";
     statusText.innerText = "MOFIZ THINKING";
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+    const promptText = `তোমার নাম মফিজ। তুমি একজন বিনয়ী ও বন্ধুসুলভ পুরুষ এআই অ্যাসিস্ট্যান্ট। ব্যবহারকারীর প্রশ্ন: ${userText}। অত্যন্ত সংক্ষিপ্ত ও চমৎকার বাংলায় সর্বোচ্চ ২ বাক্যে উত্তর দাও।`;
 
     try {
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          system_instruction: {
-            parts: [{ text: "তোমার নাম মফিজ। তুমি একজন বাংলা ভয়েস অ্যাসিস্ট্যান্ট। ছোট এবং বন্ধুত্বপূর্ণ বাংলায় উত্তর দাও।" }]
-          },
           contents: [{
-            parts: [{ text: userText }]
+            parts: [{ text: promptText }]
           }]
         })
       });
 
       const data = await response.json();
       
-      if (data.candidates && data.candidates[0].content.parts[0].text) {
-        let aiReply = data.candidates[0].content.parts[0].text;
+      if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0].text) {
+        let aiReply = data.candidates[0].content.parts[0].text.trim();
         message.innerText = aiReply;
         speak(aiReply);
       } else {
         throw new Error("No response text");
       }
     } catch (error) {
-      console.error(error);
-      let errorMsg = "দুঃখিত, এপিআই সংযোগে কোনো সমস্যা হচ্ছে।";
+      console.error("Gemini API Error:", error);
+      let errorMsg = "দুঃখিত ভাই, আবার চেষ্টা করুন।";
       message.innerText = errorMsg;
       speak(errorMsg);
     }
@@ -166,17 +165,24 @@ button:active{ transform:scale(.96); }
     recognition.onstart = function() {
       statusText.innerText = "MOFIZ LISTENING...";
       message.innerText = "আমি শুনছি, বলুন...";
+      button.classList.add("listening");
     };
 
     recognition.onresult = function(event) {
+      button.classList.remove("listening");
       const userSpeech = event.results[0][0].transcript;
-      message.innerText = "আপনি বলেছেন: " + userSpeech;
+      message.innerText = "আপনি: " + userSpeech;
       askGemini(userSpeech);
     };
 
     recognition.onerror = function() {
+      button.classList.remove("listening");
       statusText.innerText = "MOFIZ ONLINE";
-      message.innerText = "আমি কিছু শুনতে পাইনি, আবার চেষ্টা করুন।";
+      message.innerText = "আমি শুনতে পাইনি, আবার চেষ্টা করুন।";
+    };
+
+    recognition.onend = function() {
+      button.classList.remove("listening");
     };
 
     recognition.start();
@@ -184,3 +190,6 @@ button:active{ transform:scale(.96); }
 
   button.addEventListener("click", startListening);
 </script>
+
+</body>
+</html>
