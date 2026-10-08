@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AERIS - AI Assistant</title>
+<title>MOFIZ - AI Assistant</title>
 
 <style>
 *{ box-sizing:border-box; }
@@ -13,7 +13,7 @@ body{
   align-items:center; text-align:center;
 }
 .container{ width:100%; max-width:500px; padding:25px; }
-h1{ font-size:42px; letter-spacing:8px; margin-bottom:5px; }
+h1{ font-size:42px; letter-spacing:8px; margin-bottom:5px; color:#00eaff; }
 .status{ color:#00eaff; font-size:14px; letter-spacing:3px; margin-bottom:45px; }
 .circle{
   width:220px; height:220px; margin:auto; border-radius:50%;
@@ -24,7 +24,7 @@ h1{ font-size:42px; letter-spacing:8px; margin-bottom:5px; }
 .inner{
   width:150px; height:150px; border-radius:50%; background:#07121a;
   border:1px solid #00eaff; display:flex; justify-content:center; align-items:center;
-  font-size:25px; letter-spacing:4px; box-shadow:0 0 30px rgba(0,234,255,.4);
+  font-size:22px; font-weight:bold; letter-spacing:3px; box-shadow:0 0 30px rgba(0,234,255,.4);
 }
 .message{ min-height:60px; margin-top:40px; font-size:18px; line-height:1.6; word-break: break-word; }
 button{
@@ -51,18 +51,18 @@ button:active{ transform:scale(.96); }
 <body>
 
 <div class="container">
-  <h1>AERIS</h1>
-  <div class="status" id="status">AERIS ONLINE</div>
+  <h1>MOFIZ</h1>
+  <div class="status" id="status">MOFIZ ONLINE</div>
   <div class="circle" id="circle">
-    <div class="inner" id="core">AERIS</div>
+    <div class="inner" id="core">MOFIZ</div>
   </div>
   <div class="message" id="message">কথা বলতে বাটনে চাপুন...</div>
   <button id="talkButton">🎙️ কথা বলুন</button>
 </div>
 
 <script>
-// আপনার প্রদানকৃত জেমিনাই এপিআই কী
-const GEMINI_API_KEY = "AQ.Ab8RN6K6SavnfJg3WrrZzzPFj4zm1Vv9Ilp82wEmtYHP8DI9nA";
+// ⚠️ আপনার তৈরি করা নতুন GEMINI API KEY-টি এখানে বসাবেন
+const GEMINI_API_KEY = "AQ.Ab8RN6IOkHJjggVrqH9FCJLQG6JsxXJ6EAwfDmENWpN1pCOOUw";
 
 const button = document.getElementById("talkButton");
 const message = document.getElementById("message");
@@ -82,7 +82,7 @@ if (speechSynthesis.onvoiceschanged !== undefined) {
   speechSynthesis.onvoiceschanged = loadVoices;
 }
 
-// ১. স্পষ্ট নারী কণ্ঠে বাংলা আউটপুট
+// ১. পুরুষ কণ্ঠে বাংলা আউটপুট (মফিজ)
 function speak(text) {
   if (!text || !('speechSynthesis' in window)) return;
 
@@ -90,33 +90,27 @@ function speak(text) {
 
   const cleanText = text.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
   const utterance = new SpeechSynthesisUtterance(cleanText);
-  utterance.lang = "bn-BD";
+  utterance.lang = "bn-BD"; // ফোনের ডিফল্ট বাংলাদেশি পুরুষ কণ্ঠ
   utterance.rate = 0.95;
 
-  const bnVoices = voices.filter(v => v.lang.includes("bn") || v.lang.includes("BN"));
-  let selectedVoice = bnVoices.find(v => v.name.toLowerCase().includes("female") || v.name.toLowerCase().includes("google") || v.name.toLowerCase().includes("natural"));
-
-  if (!selectedVoice && bnVoices.length > 0) {
-    selectedVoice = bnVoices[0];
-  }
-
-  if (selectedVoice) {
-    utterance.voice = selectedVoice;
+  let maleVoice = voices.find(v => v.lang.includes("bn") || v.lang.includes("BN"));
+  if (maleVoice) {
+    utterance.voice = maleVoice;
   }
 
   utterance.onstart = function() {
     circle.classList.add("speaking");
-    statusText.innerText = "AERIS SPEAKING";
+    statusText.innerText = "MOFIZ SPEAKING";
   };
 
   utterance.onend = function() {
     circle.classList.remove("speaking");
-    statusText.innerText = "AERIS ONLINE";
+    statusText.innerText = "MOFIZ ONLINE";
   };
 
   utterance.onerror = function() {
     circle.classList.remove("speaking");
-    statusText.innerText = "AERIS ONLINE";
+    statusText.innerText = "MOFIZ ONLINE";
   };
 
   synth.speak(utterance);
@@ -131,14 +125,14 @@ if (!SpeechRecognition) {
   button.disabled = true;
 } else {
   recognition = new SpeechRecognition();
-  recognition.lang = "bn-BD";
+  recognition.lang = "bn-BD"; 
   recognition.continuous = false;
   recognition.interimResults = false;
 
   recognition.onstart = function(){
     button.innerText = "🔴 শুনছি...";
     button.classList.add("listening");
-    statusText.innerText = "AERIS LISTENING";
+    statusText.innerText = "MOFIZ LISTENING";
   };
 
   recognition.onresult = function(event){
@@ -150,7 +144,7 @@ if (!SpeechRecognition) {
   recognition.onerror = function(){
     button.innerText = "🎙️ কথা বলুন";
     button.classList.remove("listening");
-    statusText.innerText = "AERIS ONLINE";
+    statusText.innerText = "MOFIZ ONLINE";
     message.innerText = "আবার চেষ্টা করুন।";
   };
 
@@ -166,15 +160,15 @@ button.addEventListener("click", function(){
   }
 });
 
-// ৩. Gemini AI রেসপন্স প্রসেসিং
+// ৩. Gemini AI (মফিজের পার্সোনালিটি প্রম্পট)
 async function askGeminiAI(userQuery) {
   button.innerText = "🤔 ভাবছি...";
   button.classList.add("thinking");
-  statusText.innerText = "AERIS THINKING";
+  statusText.innerText = "MOFIZ THINKING";
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
-  const promptText = `তুমি একজন বুদ্ধিমতী ও বন্ধুত্বপূর্ণ নারী এআই অ্যাসিস্ট্যান্ট, তোমার নাম 'AERIS' (এরিস)। তোমাকে সবসময় সংক্ষিপ্ত ও প্রাকটিক্যাল উত্তর দিতে হবে যাতে মুখে বাংলা উচ্চারণ করতে সুবিধা হয়। উত্তর সর্বোচ্চ ২ থেকে ৩ বাক্যের মধ্যে রাখবে। প্রশ্ন: ${userQuery}`;
+  const promptText = `তুমি একজন অত্যন্ত বুদ্ধিমান, অমায়িক এবং নির্ভরযোগ্য পুরুষ এআই অ্যাসিস্ট্যান্ট, তোমার নাম 'মফিজ' (Mofiz)। তুমি সবসময় ব্যবহারকারীর সাথে পুরুষ হিসেবে বিনয়ী ও বন্ধুসুলভভাবে বাংলায় কথা বলবে। সবসময় সংক্ষিপ্ত ও প্রাকটিক্যাল উত্তর দেবে যা ২ থেকে ৩ বাক্যের মধ্যে সীমাবদ্ধ থাকে। প্রশ্ন: ${userQuery}`;
 
   try {
     const response = await fetch(url, {
@@ -193,11 +187,11 @@ async function askGeminiAI(userQuery) {
 
     if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0].text) {
       const aiReply = data.candidates[0].content.parts[0].text.trim();
-      message.innerText = "AERIS: " + aiReply;
+      message.innerText = "মফিজ: " + aiReply;
       speak(aiReply);
     } else {
-      const fallback = "দুঃখিত, আমি বিষয়টি সঠিকভাবে বুঝতে পারিনি।";
-      message.innerText = "AERIS: " + fallback;
+      const fallback = "দুঃখিত ভাই, আমি বিষয়টি বুঝতে পারিনি। আবার বলবেন?";
+      message.innerText = "মফিজ: " + fallback;
       speak(fallback);
     }
 
@@ -205,8 +199,8 @@ async function askGeminiAI(userQuery) {
     console.error("AI Error:", error);
     button.innerText = "🎙️ কথা বলুন";
     button.classList.remove("thinking");
-    const errorMsg = "এআই সার্ভারের সাথে সংযোগ করা যাচ্ছে না।";
-    message.innerText = "AERIS: " + errorMsg;
+    const errorMsg = "এআই সার্ভারের সাথে সংযোগ করা যাচ্ছে না। API Key ঠিক আছে কিনা দেখুন।";
+    message.innerText = "মফিজ: " + errorMsg;
     speak(errorMsg);
   }
 }
