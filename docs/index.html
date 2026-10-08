@@ -61,150 +61,126 @@ button:active{ transform:scale(.96); }
 </div>
 
 <script>
-// ⚠️ আপনার তৈরি করা নতুন GEMINI API KEY-টি এখানে বসাবেন
-const GEMINI_API_KEY = "AQ.Ab8RN6IOkHJjggVrqH9FCJLQG6JsxXJ6EAwfDmENWpN1pCOOUw";
+  const GEMINI_API_KEY = "AQ.Ab8RN6IOkHJjggVrqH9FCJLQG6JsxXJ6EAwfDmENWpN1pCOOUw";
 
-const button = document.getElementById("talkButton");
-const message = document.getElementById("message");
-const statusText = document.getElementById("status");
-const circle = document.getElementById("circle");
+  const button = document.getElementById("talkButton");
+  const message = document.getElementById("message");
+  const statusText = document.getElementById("status");
+  const circle = document.getElementById("circle");
 
-let synth = window.speechSynthesis;
-let voices = [];
+  let synth = window.speechSynthesis;
+  let voices = [];
 
-function loadVoices() {
-  if ('speechSynthesis' in window) {
-    voices = synth.getVoices();
+  function loadVoices() {
+    if ('speechSynthesis' in window) {
+      voices = synth.getVoices();
+    }
   }
-}
-loadVoices();
-if (speechSynthesis.onvoiceschanged !== undefined) {
-  speechSynthesis.onvoiceschanged = loadVoices;
-}
-
-// ১. পুরুষ কণ্ঠে বাংলা আউটপুট (মফিজ)
-function speak(text) {
-  if (!text || !('speechSynthesis' in window)) return;
-
-  synth.cancel();
-
-  const cleanText = text.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
-  const utterance = new SpeechSynthesisUtterance(cleanText);
-  utterance.lang = "bn-BD"; // ফোনের ডিফল্ট বাংলাদেশি পুরুষ কণ্ঠ
-  utterance.rate = 0.95;
-
-  let maleVoice = voices.find(v => v.lang.includes("bn") || v.lang.includes("BN"));
-  if (maleVoice) {
-    utterance.voice = maleVoice;
+  loadVoices();
+  if (speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = loadVoices;
   }
 
-  utterance.onstart = function() {
-    circle.classList.add("speaking");
-    statusText.innerText = "MOFIZ SPEAKING";
-  };
+  function speak(text) {
+    if (!text || !('speechSynthesis' in window)) return;
+    synth.cancel();
 
-  utterance.onend = function() {
-    circle.classList.remove("speaking");
-    statusText.innerText = "MOFIZ ONLINE";
-  };
+    const cleanText = text.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}]/gu, '');
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = "bn-BD";
+    utterance.rate = 0.95;
 
-  utterance.onerror = function() {
-    circle.classList.remove("speaking");
-    statusText.innerText = "MOFIZ ONLINE";
-  };
-
-  synth.speak(utterance);
-}
-
-// ২. বাংলা স্পিচ রিকগনিশন
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-let recognition = null;
-
-if (!SpeechRecognition) {
-  message.innerText = "দয়া করে Google Chrome ব্রাউজার ব্যবহার করুন।";
-  button.disabled = true;
-} else {
-  recognition = new SpeechRecognition();
-  recognition.lang = "bn-BD"; 
-  recognition.continuous = false;
-  recognition.interimResults = false;
-
-  recognition.onstart = function(){
-    button.innerText = "🔴 শুনছি...";
-    button.classList.add("listening");
-    statusText.innerText = "MOFIZ LISTENING";
-  };
-
-  recognition.onresult = function(event){
-    const userSpeech = event.results[0][0].transcript.trim();
-    message.innerText = "আপনি: " + userSpeech;
-    askGeminiAI(userSpeech);
-  };
-
-  recognition.onerror = function(){
-    button.innerText = "🎙️ কথা বলুন";
-    button.classList.remove("listening");
-    statusText.innerText = "MOFIZ ONLINE";
-    message.innerText = "আবার চেষ্টা করুন।";
-  };
-
-  recognition.onend = function(){
-    button.innerText = "🎙️ কথা বলুন";
-    button.classList.remove("listening");
-  };
-}
-
-button.addEventListener("click", function(){
-  if(recognition) {
-    try { recognition.start(); } catch(e){}
-  }
-});
-
-// ৩. Gemini AI (মফিজের পার্সোনালিটি প্রম্পট)
-async function askGeminiAI(userQuery) {
-  button.innerText = "🤔 ভাবছি...";
-  button.classList.add("thinking");
-  statusText.innerText = "MOFIZ THINKING";
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-
-  const promptText = `তুমি একজন অত্যন্ত বুদ্ধিমান, অমায়িক এবং নির্ভরযোগ্য পুরুষ এআই অ্যাসিস্ট্যান্ট, তোমার নাম 'মফিজ' (Mofiz)। তুমি সবসময় ব্যবহারকারীর সাথে পুরুষ হিসেবে বিনয়ী ও বন্ধুসুলভভাবে বাংলায় কথা বলবে। সবসময় সংক্ষিপ্ত ও প্রাকটিক্যাল উত্তর দেবে যা ২ থেকে ৩ বাক্যের মধ্যে সীমাবদ্ধ থাকে। প্রশ্ন: ${userQuery}`;
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{ text: promptText }]
-        }]
-      })
-    });
-
-    const data = await response.json();
-    button.innerText = "🎙️ কথা বলুন";
-    button.classList.remove("thinking");
-
-    if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0].text) {
-      const aiReply = data.candidates[0].content.parts[0].text.trim();
-      message.innerText = "মফিজ: " + aiReply;
-      speak(aiReply);
-    } else {
-      const fallback = "দুঃখিত ভাই, আমি বিষয়টি বুঝতে পারিনি। আবার বলবেন?";
-      message.innerText = "মফিজ: " + fallback;
-      speak(fallback);
+    let bnVoice = voices.find(v => v.lang.includes("bn") || v.lang.includes("BN"));
+    if (bnVoice) {
+      utterance.voice = bnVoice;
     }
 
-  } catch (error) {
-    console.error("AI Error:", error);
-    button.innerText = "🎙️ কথা বলুন";
-    button.classList.remove("thinking");
-    const errorMsg = "এআই সার্ভারের সাথে সংযোগ করা যাচ্ছে না। API Key ঠিক আছে কিনা দেখুন।";
-    message.innerText = "মফিজ: " + errorMsg;
-    speak(errorMsg);
-  }
-}
-</script>
+    utterance.onstart = function() {
+      circle.classList.add("speaking");
+      statusText.innerText = "MOFIZ SPEAKING";
+    };
 
-</body>
-</html>
+    utterance.onend = function() {
+      circle.classList.remove("speaking");
+      statusText.innerText = "MOFIZ ONLINE";
+    };
+
+    utterance.onerror = function() {
+      circle.classList.remove("speaking");
+      statusText.innerText = "MOFIZ ONLINE";
+    };
+
+    synth.speak(utterance);
+  }
+
+  // Gemini API থেকে উত্তর আনার ফাংশন
+  async function askGemini(userText) {
+    message.innerText = "মফিজ চিন্তা করছে...";
+    statusText.innerText = "MOFIZ THINKING";
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          system_instruction: {
+            parts: [{ text: "তোমার নাম মফিজ। তুমি একজন বাংলা ভয়েস অ্যাসিস্ট্যান্ট। ছোট এবং বন্ধুত্বপূর্ণ বাংলায় উত্তর দাও।" }]
+          },
+          contents: [{
+            parts: [{ text: userText }]
+          }]
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.candidates && data.candidates[0].content.parts[0].text) {
+        let aiReply = data.candidates[0].content.parts[0].text;
+        message.innerText = aiReply;
+        speak(aiReply);
+      } else {
+        throw new Error("No response text");
+      }
+    } catch (error) {
+      console.error(error);
+      let errorMsg = "দুঃখিত, এপিআই সংযোগে কোনো সমস্যা হচ্ছে।";
+      message.innerText = errorMsg;
+      speak(errorMsg);
+    }
+  }
+
+  // কথা শোনার ফাংশন (Speech Recognition)
+  function startListening() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("আপনার ব্রাউজারে ভয়েস সাপোর্ট নেই। গুগল ক্রোম ব্যবহার করুন।");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'bn-BD';
+    recognition.interimResults = false;
+
+    recognition.onstart = function() {
+      statusText.innerText = "MOFIZ LISTENING...";
+      message.innerText = "আমি শুনছি, বলুন...";
+    };
+
+    recognition.onresult = function(event) {
+      const userSpeech = event.results[0][0].transcript;
+      message.innerText = "আপনি বলেছেন: " + userSpeech;
+      askGemini(userSpeech);
+    };
+
+    recognition.onerror = function() {
+      statusText.innerText = "MOFIZ ONLINE";
+      message.innerText = "আমি কিছু শুনতে পাইনি, আবার চেষ্টা করুন।";
+    };
+
+    recognition.start();
+  }
+
+  button.addEventListener("click", startListening);
+</script>
